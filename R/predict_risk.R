@@ -4,8 +4,12 @@
 #' fits two distinct survival models—a Partly Conditional Cox (PC.Cox) model and a traditional Time-Dependent Cox
 #' (TD-Cox) model—and generates comparative risk predictions for the test set population.
 #'
+#' @param data An optional data frame containing the primary longitudinal data.
+#'   If provided (\code{NULL} is the default), this data is used instead of loading
+#'   the file specified by \code{data_name}.
 #' @param data_name A character string specifying the prefix of the primary longitudinal data file name.
-#'   The function expects the file at the hardcoded path: "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/".
+#'   This parameter is only used if \code{data} is \code{NULL}. The function expects the file at the hardcoded path:
+#'   "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/".
 #' @param marker_name A character string specifying the name of the longitudinal marker column (e.g., "NT_pro_BNP")
 #'   used as a time-dependent predictor.
 #' @param Predictors A character vector specifying names of time-independent covariates (e.g., "Age", "treatment_reg")
@@ -25,8 +29,8 @@
 #'
 #' \strong{Data Handling and Training/Test Split:}
 #' \itemize{
-#'   \item Data is loaded from a hardcoded path, and subject assignment to "training" or "test" sets is read from
-#'     a separate file ("population_set.csv").
+#'   \item Data can be provided directly via the \code{data} argument or loaded from the hardcoded path (via \code{data_name}).
+#'     Subject assignment to "training" or "test" sets is always read from a separate file ("population_set.csv") at the hardcoded path.
 #'   \item Both the PC.Cox and TD-Cox models are trained exclusively on the "training" set.
 #'   \item Risk predictions are generated exclusively for subjects in the "test" set.
 #' }
@@ -45,8 +49,7 @@
 #'     \code{log2(time_to_sample+1)} as a predictor.
 #'   \item \strong{Time-Dependent Cox (TD-Cox):} Uses the \code{survival::tmerge} approach to create time-dependent
 #'     data, where the marker value is treated as constant between measurements. The marker value interpolated at
-#'     \code{pred_from} is added to the data for prediction purposes. 
-
+#'     \code{pred_from} is added to the data for prediction purposes.
 
 #' }
 #'
@@ -74,15 +77,19 @@
 #' 
 #' 
 
-predict_risk <- function(data_name = "cady_data_mp_50",
+predict_risk <- function(data = NULL,
+                         data_name = "cady_data_mp_50",
                          marker_name = "NT_pro_BNP",
                          Predictors = c("Age","treatment_reg"),
                          log_marker = FALSE,
                          pred_from = 150,
                          pred_to = 240) {
 
-  pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
-  dat <- read.csv(pa)
+  if (is.null(data)) {
+    pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
+    dat <- read.csv(pa)
+  } else {dat <- data}
+
   po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
   dat1 <- read.csv(po)
   dat1 <- dat1 %>% select(SubjectID = Label,set)
@@ -196,8 +203,12 @@ predict_risk <- function(data_name = "cady_data_mp_50",
   #*** COX model
   #***
   #***************************
-  pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
-  dat <- read.csv(pa)
+  
+  if (is.null(data)) {
+    pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
+    dat <- read.csv(pa)
+  } else {dat <- data}
+  
   po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
   dat1 <- read.csv(po)
   dat1 <- dat1 %>% select(SubjectID = Label,set)
