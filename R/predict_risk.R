@@ -21,9 +21,12 @@
 #' @param pred_to An integer specifying the total prediction time (e.g., days). The prediction window is
 #'   \code{pred_to} - \code{pred_from}. Defaults to 240.
 #'
-#' @return A data frame (tibble) containing subject-level data, the interpolated marker value at \code{pred_from},
-#'   and two distinct risk predictions for the test set: \code{Risk_PC} (from PC.Cox) and \code{Risk_TDcox} (from TD-Cox).
-#'
+#' @return A list containing:
+#' \item{pred_data}{A data frame (tibble) containing subject-level data, the interpolated marker value at \code{pred_from},
+#'   and two distinct risk predictions for the test set: \code{Risk_PC} (from PC.Cox) and \code{Risk_TDcox} (from TD-Cox).}
+#' \item{pc_model}{The fitted Partly Conditional Cox model object on the training set.}
+#' \item{tdcox_model}{The fitted Time-Dependent Cox model object on the training set.}
+#' 
 #' @details
 #' This function performs a rigorous comparison of two dynamic prediction methods.
 #'
@@ -72,7 +75,34 @@
 #'   pred_to = 365    # Predict risk up to 365 days
 #' )
 #' print(results_comparison)
-#' }
+#' 
+#' # Note: Requires access to the M: drive path specified internally in the function.
+#' # Use a dummy data frame with the required columns for a runnable example.
+#'
+#' # Create a minimal dummy data set for illustration (cannot run without the M: drive data)
+#' dummy_data <- data.frame(
+#'   Label = 1:6,
+#'   NT_pro_BNP = runif(12, 100, 500),
+#'   Age = rep(c(65, 70, 75), each = 2),
+#'   treatment_reg = rep(c(1, 0), 3),
+#'   time_to_event = rep(c(300, 250, 400), each = 2),
+#'   status = rep(c(1, 0, 1), each = 2),
+#'   time_to_sample = c(100, 200, 120, 180, 140, 220)
+#' )
+#' 
+#' # You would need a population_set.csv locally for this to run
+#' dummy_pop <- data.frame(Label = 1:6, set = c("training", "training", "training", "test", "test", "test"))
+#' 
+#' # Example call (requires data):
+#' result <- predict_risk(
+#'   data_name = "your_data_name",
+#'   marker_name = "NT_pro_BNP",
+#'   Predictors = c("Age", "treatment_reg"),
+#'   pred_from = 150,
+#'   pred_to = 365
+#' )
+#' head(result$pred_data)}
+#' 
 #' @export
 #' 
 #' 
@@ -124,6 +154,8 @@ predict_risk <- function(data = NULL,
     predictors =c("log_time_to_sample", "marker",Predictors),
     data = DD)
 
+  fit_pccox <- pccox$model.fit
+  
   ################
   #**
   ### PREDICTIONS
@@ -187,7 +219,7 @@ predict_risk <- function(data = NULL,
     filter(time_to_sample <= time_to_event) %>% 
     filter(set=="test")
   
-  oouu <- predict(pccox, newdata = nd, prediction.time = pred_to-pred_from)
+  oouu <- predict(pccox, newdata = nd, prediction.time = pred_to)
   wher <- str_detect(names(oouu),"risk_")
   names(oouu)[wher] <- "Risk_PC"
 
@@ -292,7 +324,7 @@ predict_risk <- function(data = NULL,
     filter(set=="test")%>%
     filter(tstart==pred_from) 
   
-  aa <- summary(survfit(fit_tdcox,newdata = ndd,se.fit=FALSE),times = pred_from + pred_to-pred_from )
+  aa <- summary(survfit(fit_tdcox,newdata = ndd,se.fit=FALSE),times = pred_to )
   ndd$Risk_TDcox <- as.numeric(1-aa$surv)
   out <- ndd %>% select(SubjectID,Risk_TDcox)
   
@@ -306,5 +338,7 @@ predict_risk <- function(data = NULL,
   out <- out %>% mutate(predict_to = pred_to)
   out <- out %>% select(marker_name:status,predict_from = time_to_sample,predict_to,marker_at_predfrom = marker,Risk_PC,Risk_TDcox)
   out
+  
+  list(pred_data = out,pc_model = fit_pccox,tdcox_model = fit_tdcox )
 }
 
