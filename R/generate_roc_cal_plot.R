@@ -52,18 +52,25 @@ generate_roc_cal_plot <- function(
     merged_title = "ROC and Calibration Merged Plot"
 ) {
   
-  # --- 1. Calculate Risk Score (and generate the list output needed for survC plots) ---
-  model_formula <- coxph_model$formula
-  
-  risk_score_result_list <- survC::calc_risk_score(
-    formula = model_formula,
+  # --- 1. Calculate Risk Score and Add to Data Frame ---
+  # The call to calc_risk_score with a model object returns a numeric vector.
+  risk_score_vector <- survC::calc_risk_score(
+    model = coxph_model, 
     data = data,
     type = survC_type 
   )
   
-  data$risk_score <- risk_score_result_list$risk_score
+  data$risk_score <- risk_score_vector
   
-  # --- 2. Calculate AUC and ROC Curve ---
+  # --- 2. Manually Construct List for survC::tdroc_calc and survC::cal_plot ---
+  # These functions require a list containing time, event, and the score.
+  risk_score_result_list <- list(
+    time = data[[time_col]],
+    event = data[[event_col]],
+    risk_score = data$risk_score
+  )
+  
+  # --- 3. Calculate AUC and ROC Curve ---
   tdroc_res <- survC::tdroc_calc(
     risk_score_result_list, 
     t = tdroc_t, 
@@ -76,11 +83,11 @@ generate_roc_cal_plot <- function(
     title = roc_title
   )
   
-  # --- 3. Calibration Plot ---
+  # --- 4. Calibration Plot ---
   cal_res <- survC::cal_plot(risk_score_result_list)
   cal_plot <- cal_res$plot + labs(title = cal_title)
   
-  # --- 4. Find Optimal Cutpoint (cp) ---
+  # --- 5. Find Optimal Cutpoint (cp) ---
   time_data <- data[[time_col]]
   event_data <- data[[event_col]]
   
@@ -98,7 +105,7 @@ generate_roc_cal_plot <- function(
   
   optimal_cutpoint <- cp$optimal_cutpoint[1]
   
-  # --- 5. Confusion Matrix and Diagnostic Performance ---
+  # --- 6. Confusion Matrix and Diagnostic Performance ---
   data$prediction <- as.factor(
     ifelse(data$risk_score > optimal_cutpoint, "Positive", "Negative")
   )
@@ -120,7 +127,7 @@ generate_roc_cal_plot <- function(
     tn = conf_matrix$table["Negative", "Negative"]
   )
   
-  # --- 6. Merged Plot ---
+  # --- 7. Merged Plot ---
   merged_plot <- cowplot::plot_grid(
     roc_plot, cal_plot, 
     labels = c("A", "B"), ncol = 2,
@@ -132,7 +139,7 @@ generate_roc_cal_plot <- function(
     ncol = 1, rel_heights = c(0.05, 1)
   )
   
-  # --- 7. Prepare Output ---
+  # --- 8. Prepare Output ---
   wilson_output_string <- paste0(
     "Mean proportion correctly diagnosed = ", round(wilson_res$mean, 2), ", ",
     "one-sided 95% CI (", round(wilson_res$lower, 2), " - ",  
