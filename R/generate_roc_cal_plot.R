@@ -74,7 +74,7 @@ generate_roc_cal_plot <- function(
   cp <- cutpointr::cutpointr(
     data = out,
     x = risk_coxph,
-    class = .data[[event_col]], # Use event_col to reference the status column
+    class = !!rlang::sym(event_col),   # ✔ FIXED
     method = cutpointr_method,
     metric = cutpointr_metric,
     pos_class = 1,
