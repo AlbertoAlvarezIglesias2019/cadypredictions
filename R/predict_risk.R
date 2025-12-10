@@ -107,18 +107,18 @@
 #' 
 #' 
 
-predict_risk <- function(data = NULL,
+predict_risk <- function(datos = NULL,
                          data_name = "cady_data_mp_50",
                          marker_name = "NT_pro_BNP",
-                         Predictors = c("Age","treatment_reg"),
+                         Predictors = NULL,
                          log_marker = FALSE,
                          pred_from = 150,
                          pred_to = 240) {
 
-  if (is.null(data)) {
+  if (is.null(datos)) {
     pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
     dat <- read.csv(pa)
-  } else {dat <- data}
+  } else {dat <- datos}
 
   po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
   dat1 <- read.csv(po)
@@ -236,10 +236,10 @@ predict_risk <- function(data = NULL,
   #***
   #***************************
   
-  if (is.null(data)) {
+  if (is.null(datos)) {
     pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
     dat <- read.csv(pa)
-  } else {dat <- data}
+  } else {dat <- datos}
   
   po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
   dat1 <- read.csv(po)
@@ -312,7 +312,11 @@ predict_risk <- function(data = NULL,
                  marker = tdc(time_to_sample,marker)) 
   
   ddd <- masterD %>% filter(set=="training")
-  formu <- as.formula(paste("Surv(tstart,tstop,death)~marker +",paste(Predictors,collapse="+"),sep=""))
+  if (is.null(Predictors)) {
+    formu <- as.formula("Surv(tstart,tstop,death)~marker")} else {
+      formu <- as.formula(paste("Surv(tstart,tstop,death)~marker +",paste(Predictors,collapse="+"),sep=""))
+    }
+  
   fit_tdcox <- coxph(formu,data=ddd)
   
   
