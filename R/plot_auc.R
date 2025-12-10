@@ -130,7 +130,7 @@ plot_auc <- function(df,what = "Risk_PC") {
   
   text(
     x = 0.5, 
-    y = 0.5, 
+    y = 0.1, 
     labels = paste(p1,p2),
     pos = 1, # Position 4 is to the right
     col = "blue",
