@@ -69,9 +69,10 @@ plot_auc <- function(df,what = "Risk_PC") {
     tt1 <- paste("ROC Curve using time dependent Cox PH models")
   }
   
-  tt2 <- paste("(CT prediction from ",df$predict_from[1]," to ",df$predict_to[1]," days)",sep="")
+  tt2 <- paste(" (",df$predict_from[1]," to ",df$predict_to[1]," days)",sep="")
   
-  tt <- paste(tt1,"\n",tt2,sep="")
+  #tt <- paste(tt1,tt2,sep="")
+  tt <- tt1
   
   df <- as.data.frame(df)
   roc_obj <- roc(df$status,df[,what],algorithm=1)
@@ -125,13 +126,13 @@ plot_auc <- function(df,what = "Risk_PC") {
     cex = 0.8
   )
   
-  p1 <- paste0("AUC: ", round(ci_delong[2], 3), "\n")
-  p2 <- paste0("95% CI: [", round(ci_delong[1], 3), ", ", round(ci_delong[3], 3), "]\n")
+  p1 <- paste0("AUC = ", round(ci_delong[2], 3),"; ")
+  p2 <- paste0("95% CI [", round(ci_delong[1], 3), ", ", round(ci_delong[3], 3), "]")
   
   text(
     x = 0.5, 
     y = 0.1, 
-    labels = paste(p1,p2),
+    labels = paste(p1,p2,sep=""),
     pos = 1, # Position 4 is to the right
     col = "blue",
     cex = 1.1
