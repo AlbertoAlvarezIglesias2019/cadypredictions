@@ -39,7 +39,7 @@
 #'
 generate_roc_cal_plot <- function(
     data,
-    coxph_model, # The pre-fitted coxph model object
+    coxph_model, 
     time_col,    
     event_col,   
     survC_type = "risk", 
@@ -52,18 +52,20 @@ generate_roc_cal_plot <- function(
     merged_title = "ROC and Calibration Merged Plot"
 ) {
   
-  # --- 1. Calculate Risk Score ---
-  risk_score_result <- survC::calc_risk_score(
-    coxph_model, 
+  # --- 1. Calculate Risk Score (and generate the list output needed for survC plots) ---
+  model_formula <- coxph_model$formula
+  
+  risk_score_result_list <- survC::calc_risk_score(
+    formula = model_formula,
     data = data,
     type = survC_type 
   )
   
-  data$risk_score <- risk_score_result$risk_score
+  data$risk_score <- risk_score_result_list$risk_score
   
   # --- 2. Calculate AUC and ROC Curve ---
   tdroc_res <- survC::tdroc_calc(
-    risk_score_result,
+    risk_score_result_list, 
     t = tdroc_t, 
     plot = FALSE
   )
@@ -75,7 +77,7 @@ generate_roc_cal_plot <- function(
   )
   
   # --- 3. Calibration Plot ---
-  cal_res <- survC::cal_plot(risk_score_result)
+  cal_res <- survC::cal_plot(risk_score_result_list)
   cal_plot <- cal_res$plot + labs(title = cal_title)
   
   # --- 4. Find Optimal Cutpoint (cp) ---
