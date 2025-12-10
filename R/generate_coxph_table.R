@@ -25,7 +25,7 @@
 #'         }
 #'
 #' @export
-generate_coxph <- function(data, time_event_vars = c("time_to_event", "status"),
+generate_coxph_table <- function(data, time_event_vars = c("time_to_event", "status"),
                                  covariates_coxph, biomarker, labels, title, ...) {
   
   # 1. Input Validation (basic check for required packages)
