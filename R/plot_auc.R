@@ -75,7 +75,7 @@ plot_auc <- function(df,what = "Risk_PC") {
   tt <- tt1
   
   df <- as.data.frame(df)
-  roc_obj <- roc(df$status,df[,what],algorithm=1)
+  roc_obj <- roc(df$status,df[,what])
   plot(roc_obj,
        main = tt,
        col = "#0072B2", # Custom color for the curve
@@ -146,5 +146,8 @@ plot_auc <- function(df,what = "Risk_PC") {
     col = "darkgreen",
     cex = 1.1
   )
+  
+  
+  
   
 }
