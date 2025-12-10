@@ -1,7 +1,8 @@
 #' @title Fit Cox PH Model and Generate gtsummary Regression Table
 #'
 #' @description This function fits a Cox Proportional Hazards model and
-#'              generates a clean, formatted regression table using gtsummary.
+#'              generates a clean, formatted regression table using gtsummary,
+#'              allowing for easy swapping of the biomarker and its label.
 #'
 #' @param data A data frame containing the variables for the Cox model.
 #'             The data should already be filtered/subsetted as needed (e.g., to the 'training' set).
@@ -12,9 +13,9 @@
 #'                         in the model, excluding the biomarker.
 #' @param biomarker A character string representing the right-hand side (RHS) expression
 #'                  for the biomarker, often including a transformation (e.g., "log2(BNP_bl)").
-#' @param labels A named list or named vector where names are the variable names/expressions
-#'               in the model and values are the desired labels for the final table.
-#'               (e.g., list("log2(BNP_bl)" = "log2(BNP)", "Age" = "Age, years")).
+#' @param bm_lab A character string: the label for the selected biomarker (e.g., "log2(NT-proBNP)").
+#' @param cov_labs A named list of labels for all non-biomarker covariates (e.g., Age, LVEF, etc.).
+#'                 The names must match the variable names in `covariates_coxph`.
 #' @param title A character string to be used as the caption for the gtsummary table.
 #' @param ... Additional arguments passed to the `coxph` function (e.g., `ties`).
 #'
@@ -25,36 +26,43 @@
 #'         }
 #'
 #' @export
-generate_coxph <- function(data, time_event_vars = c("time_to_event", "status"),
-                                 covariates_coxph, biomarker, labels, title, ...) {
+generate_coxph_table <- function(data, time_event_vars = c("time_to_event", "status"),
+                                 covariates_coxph, biomarker, bm_lab, cov_labs, title, ...) {
   
-  # 1. Input Validation (basic check for required packages)
+  # 1. Input Validation (basic check)
   if (!requireNamespace("survival", quietly = TRUE) || !requireNamespace("gtsummary", quietly = TRUE)) {
     stop("Packages 'survival' and 'gtsummary' are required. Please install them.")
   }
   
-  # 2. Build the right-hand side (RHS) of the model
-  # The biomarker expression goes first, followed by the standard covariates
+  # 2. Prepare the combined labels list
+  # Create the biomarker label list item dynamically
+  biomarker_lab_list <- list(bm_lab)
+  names(biomarker_lab_list) <- biomarker
+  
+  # Combine the biomarker label with the static covariate labels
+  all_model_labels <- c(biomarker_lab_list, cov_labs)
+  
+  # 3. Build the right-hand side (RHS) of the model
   rhs <- c(biomarker, covariates_coxph)
   
-  # 3. Build the formula: Surv(time, status) ~ biomarker + cov1 + cov2 + ...
+  # 4. Build the formula: Surv(time, status) ~ biomarker + cov1 + cov2 + ...
   response_formula <- paste0("Surv(", time_event_vars[1], ", ", time_event_vars[2], ")")
   fml <- reformulate(rhs, response = response_formula)
   
-  # 4. Fit the Cox PH model
+  # 5. Fit the Cox PH model
   fit_coxph <- coxph(fml, data = data, ...)
   
-  # 5. Clean and format the table summary
+  # 6. Clean and format the table summary
   tbl_fit_coxph <- tbl_regression(
     fit_coxph,
     exponentiate = TRUE,
     pvalue_fun = label_style_pvalue(digits = 3),
-    label = labels # Use the provided labels list
+    label = all_model_labels # Use the combined, correct labels list
   ) %>%
     modify_header(label ~ "") %>%
     modify_caption(title)
   
-  # 6. Return the desired outputs in a named list
+  # 7. Return the desired outputs
   return(
     list(
       coxph_model = fit_coxph,
