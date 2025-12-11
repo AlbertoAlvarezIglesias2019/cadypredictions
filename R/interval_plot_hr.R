@@ -1,6 +1,3 @@
-Here is the Roxygen documentation for the provided function:
-  R
-
 #' Create a Forest Plot of Hazard Ratios with Confidence Intervals
 #'
 #' This function generates a forest plot (interval plot) to visualize the
