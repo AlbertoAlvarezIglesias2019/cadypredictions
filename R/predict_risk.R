@@ -136,7 +136,10 @@ predict_risk <- function(datos = NULL,
   DD <- DD %>% filter(!is.na(marker))
   DD <- DD %>% filter(!is.na(time_to_event))
 
-  if (log_marker) DD <- DD %>% mutate(marker = log2(marker))
+  if (log_marker) {
+    tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
+    DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+  } 
 
   masterD <- DD
   
@@ -258,7 +261,10 @@ predict_risk <- function(datos = NULL,
   DD <- DD %>% filter(!is.na(marker))
   DD <- DD %>% filter(!is.na(time_to_event))
   
-  if (log_marker) DD <- DD %>% mutate(marker = log2(marker))
+  if (log_marker) {
+    tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
+    DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+  } 
   
   masterD <- DD
   
