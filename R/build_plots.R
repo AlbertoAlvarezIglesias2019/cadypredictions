@@ -56,7 +56,7 @@
 build_plots <- function(data, predictor, corr_list) {
   
   biomks  <- names(corr_list)
-  y_labels <- c("BNP", "NT-proBNP", "CRP", "hs-Troponin I", "Galectin-3")
+  y_labels <- c("Baseline BNP", "Baseline NT-proBNP", "Baseline CRP", "Baseline hs-Troponin I", "Baseline Galectin-3")
   
   ylim_opt <- list(NULL, NULL, NULL, c(0, 15), NULL)
   
