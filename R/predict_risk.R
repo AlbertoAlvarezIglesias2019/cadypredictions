@@ -4,7 +4,7 @@
 #' fits two distinct survival models—a Partly Conditional Cox (PC.Cox) model and a traditional Time-Dependent Cox
 #' (TD-Cox) model—and generates comparative risk predictions for the test set population.
 #'
-#' @param data An optional data frame containing the primary longitudinal data.
+#' @param datos An optional data frame containing the primary longitudinal data.
 #'   If provided (\code{NULL} is the default), this data is used instead of loading
 #'   the file specified by \code{data_name}.
 #' @param data_name A character string specifying the prefix of the primary longitudinal data file name.
@@ -32,7 +32,7 @@
 #'
 #' \strong{Data Handling and Training/Test Split:}
 #' \itemize{
-#'   \item Data can be provided directly via the \code{data} argument or loaded from the hardcoded path (via \code{data_name}).
+#'   \item Data can be provided directly via the \code{datos} argument or loaded from the hardcoded path (via \code{data_name}).
 #'     Subject assignment to "training" or "test" sets is always read from a separate file ("population_set.csv") at the hardcoded path.
 #'   \item Both the PC.Cox and TD-Cox models are trained exclusively on the "training" set.
 #'   \item Risk predictions are generated exclusively for subjects in the "test" set.
