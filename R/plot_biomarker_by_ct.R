@@ -90,8 +90,8 @@ plot_biomarker_by_ct <- function(data,
       fill   = .data[[ct_col]]
     )
   ) +
-    geom_point(alpha = 0.2, size = 1.8) +
-    geom_smooth(method = "loess", se = TRUE, alpha = 0.5) +
+    geom_point(alpha = 0.1, size = 1.8) +
+    geom_smooth(method = "loess", se = TRUE, alpha = 0.35) +
     scale_colour_manual(
       values = c("No" = "#00BFC4",
                  "Yes" = "#F8766D")
