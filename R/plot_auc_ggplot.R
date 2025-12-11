@@ -66,12 +66,10 @@ plot_auc_ggplot <- function(df,what = "Risk_PC") {
   df <- as.data.frame(df)
   
   # --- 1. Dynamic Title Creation ---
-  if (what == "Risk_PC") {
-    tt1 <- "ROC Curve using partly conditional models"
-  } else {
-    tt1 <- "ROC Curve using time dependent Cox PH models"
-  }
-  
+  tt1 <- case_when(what == "Risk_PC"~"ROC Curve using partly conditional models",
+                   what == "Risk_TDcox"~"ROC Curve using time dependent Cox PH models",
+                   what == "Risk_cox_simple"~"ROC Curve using simple Cox PH models")
+
   # Subtitle for the time window
   tt2 <- paste("CT prediction from", df$predict_from[1], "to", df$predict_to[1], "days")
   
