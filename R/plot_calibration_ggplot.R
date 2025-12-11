@@ -64,11 +64,10 @@ plot_calibration_ggplot <- function(df,what = "Risk_PC") {
   df <- as.data.frame(df)
   
   # --- 1. Dynamic Title Creation ---
-  if (what == "Risk_PC") {
-    tt1 <- "Calibration using partly conditional models (test set)"
-  } else {
-    tt1 <- "Calibration using time dependent Cox PH models (test set)"
-  }
+  tt1 <- case_when(what == "Risk_PC"~"Calibration using partly conditional models",
+                   what == "Risk_TDcox"~"Calibration using time dependent Cox PH models",
+                   what == "Risk_cox_simple"~"Calibration using simple Cox PH models")
+  
   
   # Subtitle for the time window
   tt2 <- paste("CT prediction from", df$predict_from[1], "to", df$predict_to[1], "days")
@@ -80,7 +79,7 @@ plot_calibration_ggplot <- function(df,what = "Risk_PC") {
   ### Calibration
   ################
   df <- df %>%
-    mutate(Groups = cut(dup,quantile(df$dup,prob = seq(0,1,0.1)),include.lowest=TRUE)) %>% 
+    mutate(Groups = cut(dup,quantile(df$dup,prob = seq(0,1,0.1),na.rm=TRUE),include.lowest=TRUE)) %>% 
     mutate(observed = if_else(time_to_event>predict_to | time_to_event<predict_from,0,status))
   
   tmpDat <- df %>%
