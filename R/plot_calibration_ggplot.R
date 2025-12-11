@@ -1,7 +1,3 @@
-This function creates a classic calibration plot (also known as a calibration curve or reliability plot) using ggplot2. Here is the Roxygen documentation for your plot_calibration_ggplot function.
-📝 Roxygen Documentation for plot_calibration_ggplot
-R
-
 #' @title Plot Model Calibration Curve using ggplot2
 #'
 #' @description
