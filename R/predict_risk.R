@@ -1,62 +1,67 @@
-#' @title Predicts event risk using Partly Conditional and Time-Dependent Cox Models
+#' @title Predicts event risk using Partly Conditional, Time-Dependent, and Simple Baseline Cox Models
 #'
 #' @description This function loads longitudinal data, joins it with a separate training/test population set,
-#' fits two distinct survival models—a Partly Conditional Cox (PC.Cox) model and a traditional Time-Dependent Cox
-#' (TD-Cox) model—and generates comparative risk predictions for the test set population.
+#' fits three distinct survival models—a Partly Conditional Cox (PC.Cox) model, a traditional Time-Dependent Cox
+#' (TD-Cox) model, and a simple Cox model using only baseline marker value—and generates comparative risk predictions
+#' for the test set population.
 #'
 #' @param datos An optional data frame containing the primary longitudinal data.
-#'   If provided (\code{NULL} is the default), this data is used instead of loading
-#'   the file specified by \code{data_name}.
+#' If provided (\code{NULL} is the default), this data is used instead of loading
+#' the file specified by \code{data_name}.
 #' @param data_name A character string specifying the prefix of the primary longitudinal data file name.
-#'   This parameter is only used if \code{data} is \code{NULL}. The function expects the file at the hardcoded path:
-#'   "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/".
+#' This parameter is only used if \code{datos} is \code{NULL}. The function expects the file at the hardcoded path:
+#' "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/".
 #' @param marker_name A character string specifying the name of the longitudinal marker column (e.g., "NT_pro_BNP")
-#'   used as a time-dependent predictor.
+#' used as a time-dependent predictor.
 #' @param Predictors A character vector specifying names of time-independent covariates (e.g., "Age", "treatment_reg")
-#'   to be included in both survival models.
+#' to be included in all survival models.
 #' @param log_marker A logical value. If \code{TRUE}, the marker variable is transformed using \code{log2()} before
-#'   model fitting and interpolation. Defaults to \code{FALSE}.
+#' model fitting and interpolation. Defaults to \code{FALSE}.
 #' @param pred_from An integer specifying the time point (e.g., days) at which the marker value is interpolated,
-#'   serving as the start time for the risk prediction. Defaults to 150.
+#' serving as the start time for the risk prediction. Defaults to 150.
 #' @param pred_to An integer specifying the total prediction time (e.g., days). The prediction window is
-#'   \code{pred_to} - \code{pred_from}. Defaults to 240.
+#' \code{pred_to} - \code{pred_from}. Defaults to 240.
 #'
 #' @return A list containing:
 #' \item{pred_data}{A data frame (tibble) containing subject-level data, the interpolated marker value at \code{pred_from},
-#'   and two distinct risk predictions for the test set: \code{Risk_PC} (from PC.Cox) and \code{Risk_TDcox} (from TD-Cox).}
+#' and three distinct risk predictions for the test set: \code{Risk_PC} (from PC.Cox), \code{Risk_TDcox} (from TD-Cox),
+#' and \code{Risk_cox_simple} (from Simple Baseline Cox).}
 #' \item{pc_model}{The fitted Partly Conditional Cox model object on the training set.}
 #' \item{tdcox_model}{The fitted Time-Dependent Cox model object on the training set.}
-#' 
+#' \item{simplecox_model}{The fitted Simple Baseline Cox model object on the training set.}
+#'
 #' @details
-#' This function performs a rigorous comparison of two dynamic prediction methods.
+#' This function performs a rigorous comparison of three survival prediction methods.
 #'
 #' \strong{Data Handling and Training/Test Split:}
 #' \itemize{
-#'   \item Data can be provided directly via the \code{datos} argument or loaded from the hardcoded path (via \code{data_name}).
-#'     Subject assignment to "training" or "test" sets is always read from a separate file ("population_set.csv") at the hardcoded path.
-#'   \item Both the PC.Cox and TD-Cox models are trained exclusively on the "training" set.
-#'   \item Risk predictions are generated exclusively for subjects in the "test" set.
+#' \item Data can be provided directly via the \code{datos} argument or loaded from the hardcoded path (via \code{data_name}).
+#' Subject assignment to "training" or "test" sets is always read from a separate file ("population_set.csv") at the hardcoded path.
+#' \item All three models are trained exclusively on the "training" set.
+#' \item Risk predictions are generated exclusively for subjects in the "test" set.
 #' }
 #'
-#' \strong{Marker Interpolation at \code{pred_from}:}
+#' \strong{Marker Interpolation at \code{pred_from} (for PC.Cox and TD-Cox):}
 #' Marker values for all subjects are interpolated or carried forward to the prediction start time (\code{pred_from}).
 #' \itemize{
-#'   \item \strong{Interpolation:} Used if measurements exist immediately before and after \code{pred_from}.
-#'   \item \strong{Carry Forward:} Used if only measurements before \code{pred_from} are available (the last value is used).
-#'   \item \strong{Exclusion:} Subjects whose first available marker sample is \emph{after} \code{pred_from} are excluded.
+#' \item \strong{Interpolation:} Used if measurements exist immediately before and after \code{pred_from} (linear interpolation).
+#' \item \strong{Carry Forward:} Used if only measurements before \code{pred_from} are available (the last value is used).
+#' \item \strong{Exclusion:} Subjects whose first available marker sample is \emph{after} \code{pred_from} are excluded from the dynamic prediction cohorts.
 #' }
 #'
 #' \strong{Model Details:}
 #' \itemize{
-#'   \item \strong{Partly Conditional Cox (PC.Cox):} Trained on the full longitudinal marker data and uses
-#'     \code{log2(time_to_sample+1)} as a predictor.
-#'   \item \strong{Time-Dependent Cox (TD-Cox):} Uses the \code{survival::tmerge} approach to create time-dependent
-#'     data, where the marker value is treated as constant between measurements. The marker value interpolated at
-#'     \code{pred_from} is added to the data for prediction purposes.
-
+#' \item \strong{Partly Conditional Cox (PC.Cox):} Trained on the full longitudinal marker data and uses
+#' \code{log2(time_to_sample+1)} as a predictor to model the time dependency of the marker effect.
+#' \item \strong{Time-Dependent Cox (TD-Cox):} Uses the \code{survival::tmerge} approach to create time-dependent
+#' data, where the marker value is treated as constant between measurements. The marker value interpolated at
+#' \code{pred_from} is added to the data for prediction purposes.
+#' \item \strong{Simple Baseline Cox:} This model is fitted using only the **baseline** value of the specified marker
+#' (assumed to be stored in the column \code{marker_name}_bl). Prediction for this model is the absolute risk of event
+#' between \code{pred_from} and \code{pred_to} (i.e., $\hat{S}(\text{pred\_from}) - \hat{S}(\text{pred\_to})$).
 #' }
 #'
-#' @importFrom dplyr filter mutate group_by arrange slice_tail slice ungroup select distinct left_join full_join
+#' @importFrom dplyr filter mutate group_by arrange slice_tail slice ungroup select distinct left_join full_join if_else
 #' @importFrom stringr str_detect
 #' @importFrom partlyconditional PC.Cox
 #' @importFrom survival coxph Surv survfit tmerge tdc
@@ -67,43 +72,18 @@
 #' # The model is trained on the 'training' set and predictions are made on the 'test' set.
 #'
 #' results_comparison <- predict_risk(
-#'   data_name = "cady_data_mp_50",
-#'   marker_name = "NT_pro_BNP",
-#'   Predictors = c("Age", "treatment_reg"),
-#'   log_marker = TRUE,
-#'   pred_from = 180, # Interpolate marker at 180 days
-#'   pred_to = 365    # Predict risk up to 365 days
+#' data_name = "cady_data_mp_50",
+#' marker_name = "NT_pro_BNP",
+#' Predictors = c("Age", "treatment_reg"),
+#' log_marker = TRUE,
+#' pred_from = 180, # Interpolate marker at 180 days
+#' pred_to = 365 # Predict risk up to 365 days
 #' )
 #' print(results_comparison)
-#' 
-#' # Note: Requires access to the M: drive path specified internally in the function.
-#' # Use a dummy data frame with the required columns for a runnable example.
 #'
-#' # Create a minimal dummy data set for illustration (cannot run without the M: drive data)
-#' dummy_data <- data.frame(
-#'   Label = 1:6,
-#'   NT_pro_BNP = runif(12, 100, 500),
-#'   Age = rep(c(65, 70, 75), each = 2),
-#'   treatment_reg = rep(c(1, 0), 3),
-#'   time_to_event = rep(c(300, 250, 400), each = 2),
-#'   status = rep(c(1, 0, 1), each = 2),
-#'   time_to_sample = c(100, 200, 120, 180, 140, 220)
-#' )
-#' 
-#' # You would need a population_set.csv locally for this to run
-#' dummy_pop <- data.frame(Label = 1:6, set = c("training", "training", "training", "test", "test", "test"))
-#' 
-#' # Example call (requires data):
-#' result <- predict_risk(
-#'   data_name = "your_data_name",
-#'   marker_name = "NT_pro_BNP",
-#'   Predictors = c("Age", "treatment_reg"),
-#'   pred_from = 150,
-#'   pred_to = 365
-#' )
-#' head(result$pred_data)}
-#' 
-#' @export
+#' # Example access to the prediction data frame:
+#' head(results_comparison$pred_data)
+#' }
 #' 
 #' 
 
@@ -235,7 +215,7 @@ predict_risk <- function(datos = NULL,
   
   #***************************
   #***
-  #*** COX model
+  #*** COX model TD Covariates
   #***
   #***************************
   
@@ -336,19 +316,86 @@ predict_risk <- function(datos = NULL,
   
   aa <- summary(survfit(fit_tdcox,newdata = ndd,se.fit=FALSE),times = pred_to )
   ndd$Risk_TDcox <- as.numeric(1-aa$surv)
-  out <- ndd %>% select(SubjectID,Risk_TDcox)
+  out_TDcox <- ndd %>% select(SubjectID,Risk_TDcox)
+  
+  
+  
+  
+  #******************************
+  #***
+  #*** COX model SIMPLE baseline
+  #***
+  #******************************
+  
+  if (is.null(datos)) {
+    pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
+    dat <- read.csv(pa)
+  } else {dat <- datos}
+  
+  po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
+  dat1 <- read.csv(po)
+  dat1 <- dat1 %>% select(SubjectID = Label,set)
+  dat <- left_join(dat,dat1,by="SubjectID")
+  
+  
+  DD <- dat
+  DD$marker <- DD[,paste(marker_name,"_bl",sep="") ]
+  
+  
+  vars <- c("SubjectID",Predictors,"marker","time_to_event","status","set")
+  DD <- DD[,vars] %>% unique()
+  
+  
+  DD <- DD %>% filter(!is.na(marker))
+  DD <- DD %>% filter(!is.na(time_to_event))
+  
+  if (log_marker) {
+    tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
+    DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+  } 
+  
+  masterD <- DD
+  
+  ddd <- masterD %>% filter(set=="training")
+  
+  if (is.null(Predictors)) {
+    formu <- as.formula("Surv(time_to_event,status)~marker")} else {
+      formu <- as.formula(paste("Surv(tstart,tstop,death)~marker +",paste(Predictors,collapse="+"),sep=""))
+    }
+  
+  fit_cox_simple <- coxph(formu,data=ddd)
+  
+  
+  
+  ###################################################
+  ### Make the predictions from pred_from to pred_to
+  ###################################################
+  ndd <- masterD %>% 
+    filter(set=="test")
+  
+  #aa <- summary(survfit(fit_cox_simple,newdata = ndd,se.fit=FALSE),times = pred_to )
+  aa1 <- summary(survfit(fit_cox_simple,newdata = ndd,se.fit=FALSE),times = pred_from)
+  aa2 <- summary(survfit(fit_cox_simple,newdata = ndd,se.fit=FALSE),times = pred_to)
+  ndd$Risk_cox_simple <- as.numeric(aa1$surv-aa2$surv)
+  out_simpleCox <- ndd %>% select(SubjectID,Risk_cox_simple)
+  
+  
+  
+  
+  
+  
   
 
-  out <- full_join(out_risk_pc,out,by="SubjectID")
+  out <- out_risk_pc %>% full_join(out_TDcox,by="SubjectID") %>% full_join(out_simpleCox,by="SubjectID")
   
-  varia <- c("marker_name","SubjectID",Predictors,"time_to_event","status","time_to_sample","marker","Risk_PC","Risk_TDcox")
+  varia <- c("marker_name","SubjectID",Predictors,"time_to_event","status","time_to_sample","marker","Risk_PC","Risk_TDcox","Risk_cox_simple")
   
   out <- out[,varia]
   
   out <- out %>% mutate(predict_to = pred_to)
-  out <- out %>% select(marker_name:status,predict_from = time_to_sample,predict_to,marker_at_predfrom = marker,Risk_PC,Risk_TDcox)
-  out
+  out <- out %>% select(marker_name:status,predict_from = time_to_sample,predict_to,marker_at_predfrom = marker,Risk_PC,Risk_TDcox,Risk_cox_simple)
   
-  list(pred_data = out,pc_model = fit_pccox,tdcox_model = fit_tdcox )
+  
+  list(pred_data = out,pc_model = fit_pccox,tdcox_model = fit_tdcox,simplecox_model = fit_cox_simple )
 }
 
