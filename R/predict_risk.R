@@ -123,7 +123,7 @@ predict_risk <- function(datos = NULL,
   po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
   dat1 <- read.csv(po)
   dat1 <- dat1 %>% select(SubjectID = Label,set)
-  dat <- left_join(dat,dat1)
+  dat <- left_join(dat,dat1,by="SubjectID")
   
   DD <- dat
   DD$marker <- DD[,marker_name]
@@ -247,7 +247,7 @@ predict_risk <- function(datos = NULL,
   po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
   dat1 <- read.csv(po)
   dat1 <- dat1 %>% select(SubjectID = Label,set)
-  dat <- left_join(dat,dat1)
+  dat <- left_join(dat,dat1,by="SubjectID")
   
   
   DD <- dat
@@ -339,7 +339,7 @@ predict_risk <- function(datos = NULL,
   out <- ndd %>% select(SubjectID,Risk_TDcox)
   
 
-  out <- full_join(out_risk_pc,out)
+  out <- full_join(out_risk_pc,out,by="SubjectID")
   
   varia <- c("marker_name","SubjectID",Predictors,"time_to_event","status","time_to_sample","marker","Risk_PC","Risk_TDcox")
   
