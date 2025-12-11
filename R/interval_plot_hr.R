@@ -20,7 +20,7 @@
 #'     \item \code{type}: The type of analysis (e.g., "Unadjusted", "Adjusted").
 #'     \item \code{model}: The specific model name/details.
 #'   }
-#' @param marker_name A character string specifying the biomarker to be plotted
+#' @param marker_nam A character string specifying the biomarker to be plotted
 #'   (e.g., "BNP", "NT_pro_BNP"). This parameter is used to filter the \code{dat}
 #'   and set the main plot title.
 #'
@@ -50,7 +50,7 @@
 #' }
 
 
-interval_plot_hr <- function(dat,marker_name) {
+interval_plot_hr <- function(dat,marker_nam) {
   
   dat <- dat %>% mutate(lab1 = case_when(marker_name=="BNP"~"BNP",
                                          marker_name=="NT_pro_BNP"~"NT-proBNP",
@@ -68,7 +68,7 @@ interval_plot_hr <- function(dat,marker_name) {
 
   dat <- dat %>% mutate(lab = paste(lab2,"; ",type," (",model,")",sep=""))
   
-  dat <- dat %>% filter(marker_name==marker_name)
+  dat <- dat %>% filter(marker_name==marker_nam)
   
   dat <- dat %>% arrange(HR)
   temp <- dat$lab
