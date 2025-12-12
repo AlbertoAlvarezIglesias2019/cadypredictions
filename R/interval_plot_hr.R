@@ -52,6 +52,7 @@
 
 interval_plot_hr <- function(dat,marker_nam) {
   
+  bc <- 0.05/dim(dat)[1]
   dat <- dat %>% mutate(lab1 = case_when(marker_name=="BNP"~"BNP",
                                          marker_name=="NT_pro_BNP"~"NT-proBNP",
                                          marker_name=="CRP"~"CRP",
@@ -70,13 +71,17 @@ interval_plot_hr <- function(dat,marker_nam) {
   
   dat <- dat %>% filter(marker_name==marker_nam)
   
-  dat <- dat %>% arrange(HR)
+  dat <- dat %>% arrange(LB)
   temp <- dat$lab
   dat <- dat %>% mutate(lab = factor(lab,levels = temp))
 
+  #####################################
+  ## Add bonferroni correction pvalues
+  #####################################
+  dat <- dat %>% mutate(Significant = if_else(PVAL<bc,"Significant","Not significant"))
   
   # Create the forest plot
-  plot_intervals <- ggplot2::ggplot(dat, ggplot2::aes(x = HR, y = lab)) +
+  plot_intervals <- ggplot2::ggplot(dat, ggplot2::aes(x = HR, y = lab,color = Significant)) +
     # Add horizontal lines for confidence intervals
     ggplot2::geom_errorbarh(ggplot2::aes(xmin = LB, xmax = UB), 
                             height = 0.2, linewidth = 1.2) +
@@ -87,9 +92,10 @@ interval_plot_hr <- function(dat,marker_nam) {
     # Define labels and titles with large font size
     ggplot2::labs(
       title = paste("Interval Plot of Hazard Ratios for ",dat$lab1[1],sep=""),
-      subtitle = "(With confidence intervals)",
+      #subtitle = "(Confidence Intervals: Colored by Bonferroni-corrected significance.)",
       x = "Hazard Ratios",
-      y = "Setting"
+      y = "Setting",
+      color = "Bonferroni-adjusted p-values"
     ) +
     # Customize the theme to increase font sizes
     ggplot2::theme_minimal(base_size = 18) +
@@ -98,8 +104,9 @@ interval_plot_hr <- function(dat,marker_nam) {
       plot.subtitle = ggplot2::element_text(size = 18),
       axis.title = ggplot2::element_text(size = 20),
       axis.text = ggplot2::element_text(size = 14),
-      legend.title = ggplot2::element_text(size = 18),
-      legend.text = ggplot2::element_text(size = 16)
+      legend.title = ggplot2::element_text(size = 12),
+      legend.text = ggplot2::element_text(size = 12),
+      legend.position = "top"
     )
   
   plot_intervals
