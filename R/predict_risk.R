@@ -11,8 +11,8 @@
 #' @param data_name A character string specifying the prefix of the primary longitudinal data file name.
 #' This parameter is only used if \code{datos} is \code{NULL}. The function expects the file at the hardcoded path:
 #' "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/".
-#' @param marker_name A character string specifying the name of the longitudinal marker column (e.g., "NT_pro_BNP")
-#' used as a time-dependent predictor.
+#' @param marker_name A character vector string specifying the name of the longitudinal marker(s) column (e.g., "NT_pro_BNP")
+#' used as a time-dependent predictor (there could be more than one biomarker).
 #' @param Predictors A character vector specifying names of time-independent covariates (e.g., "Age", "treatment_reg")
 #' to be included in all survival models.
 #' @param log_marker A logical value. If \code{TRUE}, the marker variable is transformed using \code{log2()} before
