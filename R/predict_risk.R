@@ -109,19 +109,27 @@ predict_risk <- function(datos = NULL,
 
   
   DD <- dat
-  DD$marker <- DD[,marker_name]
+  temp <- as.data.frame(DD[,marker_name])
+  names(temp) <- paste("marker",1:length(marker_name),sep="")
+  DD <- cbind(DD,temp)
+  marker_name_temp <- names(temp)
+  #DD$marker <- DD[,c("SubjectID",marker_name)]
 
 
-  vars <- c("SubjectID",Predictors,"marker","time_to_event","status","time_to_sample","set")
+  vars <- c("SubjectID",Predictors,marker_name_temp,"time_to_event","status","time_to_sample","set")
   DD <- DD[,vars]
 
 
-  DD <- DD %>% filter(!is.na(marker))
+  for (ii in marker_name_temp) DD <- DD[!is.na(DD[,ii]),]
   DD <- DD %>% filter(!is.na(time_to_event))
 
   if (log_marker) {
-    tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
-    DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+    for (ii in marker_name_temp) {
+      tt <- min(DD[,ii][DD[,ii]>0],na.rm=TRUE)
+      DD[,ii] <- if_else(DD[,ii]==0,log2(DD[,ii]+tt/2),log2(DD[,ii]))
+      #DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+    }
+
   } 
 
   masterD <- DD
@@ -137,7 +145,7 @@ predict_risk <- function(datos = NULL,
     stime = "time_to_event",
     status = "status",
     measurement.time = "time_to_sample",  ##survival time and measurement time must be on the same scale.
-    predictors =c("log_time_to_sample", "marker",Predictors),
+    predictors =c("log_time_to_sample", marker_name_temp,Predictors),
     data = DD)
 
   fit_pccox <- pccox$model.fit
@@ -186,17 +194,20 @@ predict_risk <- function(datos = NULL,
     y[1] + sl*(pred_from-x[1])
   }
   #inter(x,y)
-  dd1 <- dd %>% filter(n>1) %>% group_by(SubjectID) %>% mutate(marker_pf = inter(time_to_sample,marker))
+  D1 <- dd %>% pivot_longer(contains("marker"))
+  dd1 <- D1 %>% filter(n>1) %>% group_by(SubjectID,name) %>% mutate(marker_pf = inter(time_to_sample,value))
   # Carry forward if they are only before
-  dd2 <- dd %>% filter(n==1) %>% mutate(marker_pf = marker)
-  dd <- rbind(dd1,dd2)
+  dd2 <- D1 %>% filter(n==1) %>% mutate(marker_pf = value)
+  dd <- rbind(dd1,dd2) %>% select(-value)
   dd <- dd %>%
     mutate(time_to_sample=pred_from,
            log_time_to_sample = log2(pred_from),
-           marker = marker_pf)
+           marker = marker_pf) 
 
-  nd <- dd %>% select(-when,-n,-marker_pf) %>%
-    distinct()
+  nd <- dd %>% select(-when,-n,-marker_pf) %>% distinct() %>% 
+    pivot_wider(names_from = name,values_from = marker)
+  
+
 
   ###################################################
   ### Make the predictions from pred_from to pred_to
@@ -211,48 +222,49 @@ predict_risk <- function(datos = NULL,
 
   out <- oouu %>% dplyr::select(-t.star)
 
-  out$marker_name <- marker_name
-  vars <- c("SubjectID",Predictors,"marker","marker_name","time_to_event","status","time_to_sample","Risk_PC")
+  out$marker_name <- paste(marker_name,collapse="; ")
+  vars <- c("SubjectID",Predictors,marker_name_temp,"marker_name","time_to_event","status","time_to_sample","Risk_PC")
 
-  out_risk_pc <- out
+  out_risk_pc <- out[,vars]
+  
+  
   
   #***************************
   #***
   #*** COX model TD Covariates
   #***
   #***************************
+  #if (is.null(datos)) {
+  #  pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
+  #  dat <- read.csv(pa)
+  #} else {dat <- datos}
   
-  if (is.null(datos)) {
-    pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
-    dat <- read.csv(pa)
-  } else {dat <- datos}
-  
-  if (!("set" %in% names(dat))) {
-    po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
-    dat1 <- read.csv(po)
-    dat1 <- dat1 %>% select(SubjectID = Label,set)
-    dat <- left_join(dat,dat1,by="SubjectID")
-  }
-  
+  #if (!("set" %in% names(dat))) {
+  #  po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
+  #  dat1 <- read.csv(po)
+  #  dat1 <- dat1 %>% select(SubjectID = Label,set)
+  #  dat <- left_join(dat,dat1,by="SubjectID")
+  #}
   
   
-  DD <- dat
-  DD$marker <- DD[,marker_name]
+  
+  #DD <- dat
+  #DD$marker <- DD[,marker_name]
   
   
-  vars <- c("SubjectID",Predictors,"marker","time_to_event","status","time_to_sample","set")
-  DD <- DD[,vars]
+  #vars <- c("SubjectID",Predictors,"marker","time_to_event","status","time_to_sample","set")
+  #DD <- DD[,vars]
   
   
-  DD <- DD %>% filter(!is.na(marker))
-  DD <- DD %>% filter(!is.na(time_to_event))
+  #DD <- DD %>% filter(!is.na(marker))
+  #DD <- DD %>% filter(!is.na(time_to_event))
   
-  if (log_marker) {
-    tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
-    DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
-  } 
+  #if (log_marker) {
+  #  tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
+  #  DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+  #} 
   
-  masterD <- DD
+  #masterD <- DD
   
   ##############################################
   ### Interpolate the marker value at pred_from
@@ -278,17 +290,26 @@ predict_risk <- function(datos = NULL,
   dd <- dd %>% filter(!(n==1 & when=="after"))
   
   ### interpolate if they have before and after
-  dd1 <- dd %>% filter(n>1) %>% group_by(SubjectID) %>% mutate(marker_pf = inter(time_to_sample,marker))
-  
-  ### Carry forward if they are only before
-  dd2 <- dd %>% filter(n==1) %>% mutate(marker_pf = marker)
-  
-  dd <- rbind(dd1,dd2)
-  
+  # interpolate if they have before and after
+  x <- c(84,168)
+  y <- c(130.40,128.70)
+  inter <- function(x,y) {
+    sl <- (y[2] - y[1])/(x[2] - x[1])
+    y[1] + sl*(pred_from-x[1])
+  }
+  #inter(x,y)
+  D1 <- dd %>% pivot_longer(contains("marker"))
+  dd1 <- D1 %>% filter(n>1) %>% group_by(SubjectID,name) %>% mutate(marker_pf = inter(time_to_sample,value))
+  # Carry forward if they are only before
+  dd2 <- D1 %>% filter(n==1) %>% mutate(marker_pf = value)
+  dd <- rbind(dd1,dd2) %>% select(-value)
   dd <- dd %>%
     mutate(time_to_sample=pred_from,
-           marker = marker_pf) %>% 
-    select(-when,-n,-marker_pf) %>% unique()
+           #log_time_to_sample = log2(pred_from),
+           marker = marker_pf) 
+  
+  dd <- dd %>% select(-when,-n,-marker_pf) %>% distinct() %>% 
+    pivot_wider(names_from = name,values_from = marker)
   
   masterD <- rbind(masterD,dd) %>% arrange(SubjectID,time_to_sample)
   
@@ -297,16 +318,19 @@ predict_risk <- function(datos = NULL,
   ###Set up data for time dependent Cox model
   ##############################################
   dat1 <- masterD[,c("SubjectID",Predictors,"time_to_event", "status","set")] %>% distinct()
-  dat2 <- masterD[,c("SubjectID","marker","time_to_sample")] 
+  dat2 <- masterD[,c("SubjectID",marker_name_temp,"time_to_sample")] 
   
   ddd1 <- tmerge(dat1,dat1,id=SubjectID,death=event(time_to_event,status))
-  masterD <- tmerge(ddd1,dat2,id = SubjectID,
-                 marker = tdc(time_to_sample,marker)) 
+  
+  texto <- paste(paste(marker_name_temp,"=tdc(time_to_sample,",marker_name_temp,")",sep=""),collapse=",")
+  texto <- paste("masterD <- tmerge(ddd1,dat2,id = SubjectID,",texto,")",sep="")
+  masterD <- eval(parse(text = texto))
+  #masterD <- tmerge(ddd1,dat2,id = SubjectID,marker = tdc(time_to_sample,marker)) 
   
   ddd <- masterD %>% filter(set=="training")
   if (is.null(Predictors)) {
-    formu <- as.formula("Surv(tstart,tstop,death)~marker")} else {
-      formu <- as.formula(paste("Surv(tstart,tstop,death)~marker +",paste(Predictors,collapse="+"),sep=""))
+    formu <- as.formula(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
+      formu <- as.formula(paste(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep=""),"+",paste(Predictors,collapse="+"),sep=""))
     }
   
   fit_tdcox <- coxph(formu,data=ddd)
@@ -348,28 +372,41 @@ predict_risk <- function(datos = NULL,
   
   
   DD <- dat
-  DD$marker <- DD[,paste(marker_name,"_bl",sep="") ]
+  #DD$marker <- DD[,paste(marker_name,"_bl",sep="") ]
+  for (ii in 1:length(marker_name_temp) ) {
+    DD[,marker_name_temp[ii] ] <- DD[,paste(marker_name[ii],"_bl",sep="") ]
+  }
   
-  
-  vars <- c("SubjectID",Predictors,"marker","time_to_event","status","set")
+  vars <- c("SubjectID",Predictors,marker_name_temp,"time_to_event","status","set")
   DD <- DD[,vars] %>% unique()
   
   
-  DD <- DD %>% filter(!is.na(marker))
+  
+  #DD <- DD %>% filter(!is.na(marker))
+  for (ii in marker_name_temp) DD <- DD[!is.na(DD[,ii]),]
   DD <- DD %>% filter(!is.na(time_to_event))
   
+  #if (log_marker) {
+  #  tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
+  #  DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+  #} 
   if (log_marker) {
-    tt <- min(DD$marker[DD$marker>0],na.rm=TRUE)
-    DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+    for (ii in marker_name_temp) {
+      tt <- min(DD[,ii][DD[,ii]>0],na.rm=TRUE)
+      DD[,ii] <- if_else(DD[,ii]==0,log2(DD[,ii]+tt/2),log2(DD[,ii]))
+      #DD <- DD %>% mutate(marker = if_else(marker==0,log2(marker+tt/2),log2(marker))  )
+    }
+    
   } 
+  
   
   masterD <- DD
   
   ddd <- masterD %>% filter(set=="training")
   
   if (is.null(Predictors)) {
-    formu <- as.formula("Surv(time_to_event,status)~marker")} else {
-      formu <- as.formula(paste("Surv(time_to_event,status)~marker +",paste(Predictors,collapse="+"),sep=""))
+    formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
+      formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),"+",paste(Predictors,collapse="+"),sep=""))
     }
   
   fit_cox_simple <- coxph(formu,data=ddd)
@@ -397,12 +434,12 @@ predict_risk <- function(datos = NULL,
 
   out <- out_risk_pc %>% full_join(out_TDcox,by="SubjectID") %>% full_join(out_simpleCox,by="SubjectID")
   
-  varia <- c("marker_name","SubjectID",Predictors,"time_to_event","status","time_to_sample","marker","Risk_PC","Risk_TDcox","Risk_cox_simple")
+  varia <- c("marker_name","SubjectID",Predictors,"time_to_event","status","time_to_sample",marker_name_temp,"Risk_PC","Risk_TDcox","Risk_cox_simple")
   
   out <- out[,varia]
   
   out <- out %>% mutate(predict_to = pred_to)
-  out <- out %>% select(marker_name:status,predict_from = time_to_sample,predict_to,marker_at_predfrom = marker,Risk_PC,Risk_TDcox,Risk_cox_simple)
+  out <- out %>% select(marker_name:status,predict_from = time_to_sample,predict_to,all_of(marker_name_temp),Risk_PC,Risk_TDcox,Risk_cox_simple)
   
   
   list(pred_data = out,pc_model = fit_pccox,tdcox_model = fit_tdcox,simplecox_model = fit_cox_simple )
