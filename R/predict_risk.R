@@ -100,10 +100,13 @@ predict_risk <- function(datos = NULL,
     dat <- read.csv(pa)
   } else {dat <- datos}
 
-  po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
-  dat1 <- read.csv(po)
-  dat1 <- dat1 %>% select(SubjectID = Label,set)
-  dat <- left_join(dat,dat1,by="SubjectID")
+  if (!("set" %in% names(dat))) {
+    po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
+    dat1 <- read.csv(po)
+    dat1 <- dat1 %>% select(SubjectID = Label,set)
+    dat <- left_join(dat,dat1,by="SubjectID")
+  }
+
   
   DD <- dat
   DD$marker <- DD[,marker_name]
@@ -224,10 +227,13 @@ predict_risk <- function(datos = NULL,
     dat <- read.csv(pa)
   } else {dat <- datos}
   
-  po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
-  dat1 <- read.csv(po)
-  dat1 <- dat1 %>% select(SubjectID = Label,set)
-  dat <- left_join(dat,dat1,by="SubjectID")
+  if (!("set" %in% names(dat))) {
+    po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
+    dat1 <- read.csv(po)
+    dat1 <- dat1 %>% select(SubjectID = Label,set)
+    dat <- left_join(dat,dat1,by="SubjectID")
+  }
+  
   
   
   DD <- dat
@@ -332,10 +338,13 @@ predict_risk <- function(datos = NULL,
     dat <- read.csv(pa)
   } else {dat <- datos}
   
-  po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
-  dat1 <- read.csv(po)
-  dat1 <- dat1 %>% select(SubjectID = Label,set)
-  dat <- left_join(dat,dat1,by="SubjectID")
+  if (!("set" %in% names(dat))) {
+    po <- "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/population_set.csv"
+    dat1 <- read.csv(po)
+    dat1 <- dat1 %>% select(SubjectID = Label,set)
+    dat <- left_join(dat,dat1,by="SubjectID")
+  }
+  
   
   
   DD <- dat
