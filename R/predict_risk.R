@@ -369,7 +369,7 @@ predict_risk <- function(datos = NULL,
   
   if (is.null(Predictors)) {
     formu <- as.formula("Surv(time_to_event,status)~marker")} else {
-      formu <- as.formula(paste("Surv(tstart,tstop,death)~marker +",paste(Predictors,collapse="+"),sep=""))
+      formu <- as.formula(paste("Surv(time_to_event,status)~marker +",paste(Predictors,collapse="+"),sep=""))
     }
   
   fit_cox_simple <- coxph(formu,data=ddd)
