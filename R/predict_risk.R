@@ -246,14 +246,16 @@ predict_risk <- function(datos = NULL,
   nd <- nd %>%
     filter(time_to_sample <= time_to_event) %>% 
     filter(set=="test")
-  nd <- nd[,c("SubjectID","log_time_to_sample","time_to_sample","time_to_event","status",marker_name_temp,fit_pccox_pred)]
-  nd <- nd %>% na.omit()
+  nd1 <- nd[,c("SubjectID","log_time_to_sample","time_to_sample","time_to_event","status",marker_name_temp,fit_pccox_pred)]
+  nd1 <- nd1 %>% na.omit()
   
-  oouu <- predict(pccox, newdata = nd, prediction.time = pred_to)
+  oouu <- predict(pccox, newdata = nd1, prediction.time = pred_to)
   wher <- str_detect(names(oouu),"risk_")
   names(oouu)[wher] <- "Risk_PC"
+  
+  out <- nd %>% left_join(oouu %>% select(SubjectID,Risk_PC),by="SubjectID")
 
-  out <- oouu %>% dplyr::select(-t.star)
+  #out <- oouu %>% dplyr::select(-t.star)
 
   out$marker_name <- paste(marker_name,collapse="; ")
   vars <- c("SubjectID",Predictors,marker_name_temp,"marker_name","time_to_event","status","time_to_sample","Risk_PC")
