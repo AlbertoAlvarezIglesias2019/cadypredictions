@@ -105,12 +105,22 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     cat("\n\n\n Row = ",kkk,"; Data and Biomarker: ",data_name," and ",marker_name,"\n\n")  
     pa <- paste(dir_in,data_name,".csv",sep="")
     masterD <- read.csv(pa)
-    masterD <- masterD %>% select(SubjectID,BNP,NT_pro_BNP,CRP,hsTnI_STAT,Galectin_3,
-                                  BNP_bl,NT_pro_BNP_bl,CRP_bl,hsTnI_STAT_bl,Galectin_3_bl,
-                                  lvef_mp_bas,lvef_max_bas,time_to_event,status,time_to_sample)
-    
+    #masterD <- masterD %>% select(SubjectID,BNP,NT_pro_BNP,CRP,hsTnI_STAT,Galectin_3,
+    #                              BNP_bl,NT_pro_BNP_bl,CRP_bl,hsTnI_STAT_bl,Galectin_3_bl,
+    #                              lvef_mp_bas,lvef_max_bas,time_to_event,status,time_to_sample)
+    n0 <- "SubjectID"
+    n1 <- mar_nam
+    n2 <- paste(mar_nam,"_bl",sep="")
+    n3 <- c("lvef_mp_bas","lvef_max_bas","time_to_event","status","time_to_sample")
+    n4 <- predictores
+    wher <- names(masterD) %in% c(n0,n1,n2,n3,n4)
+    masterD <- masterD[,wher]
+     
+     
     bldata <- read.csv(paste(dir_in,"baseline_data.csv",sep=""))
-    wher <- names(bldata) %in% predictores
+    wher1 <- names(bldata) %in% predictores
+    wher2 <- names(bldata) %in% names(masterD)
+    wher <- wher1 & !wher2
     bldata <- bldata[,c("SubjectID",names(bldata)[wher])]
     #bldata <- bldata %>% select(SubjectID,Age,diabetes_mellitus_YN,hypertension_YN,
     #                            dyslipidemia_YN,treatment_reg)
