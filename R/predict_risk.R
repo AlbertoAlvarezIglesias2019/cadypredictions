@@ -246,6 +246,8 @@ predict_risk <- function(datos = NULL,
   nd <- nd %>%
     filter(time_to_sample <= time_to_event) %>% 
     filter(set=="test")
+  nd <- nd[,c("SubjectID","log_time_to_sample","time_to_sample","time_to_event","status",marker_name_temp,fit_pccox_pred)]
+  nd <- nd %>% na.omit()
   
   oouu <- predict(pccox, newdata = nd, prediction.time = pred_to)
   wher <- str_detect(names(oouu),"risk_")
