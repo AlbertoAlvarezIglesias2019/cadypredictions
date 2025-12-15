@@ -111,17 +111,29 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     
     cat("\n\n\n",data_name," and ",marker_name,"\n\n")  
     pa <- paste(dir_in,data_name,".csv",sep="")
+    
+    pa <- paste(dir_in,data_name,".csv",sep="")
     masterD <- read.csv(pa)
-    masterD <- masterD %>% select(SubjectID,BNP,NT_pro_BNP,CRP,hsTnI_STAT,Galectin_3,
-                                  BNP_bl,NT_pro_BNP_bl,CRP_bl,hsTnI_STAT_bl,Galectin_3_bl,
-                                  lvef_mp_bas,lvef_max_bas,time_to_event,status,time_to_sample)
+    n0 <- "SubjectID"
+    n1 <- mar_nam
+    n2 <- paste(mar_nam,"_bl",sep="")
+    n3 <- c("lvef_mp_bas","lvef_max_bas","time_to_event","status","time_to_sample")
+    n4 <- predictores
+    wher <- names(masterD) %in% c(n0,n1,n2,n3,n4)
+    masterD <- masterD[,wher]
+    
     
     bldata <- read.csv(paste(dir_in,"baseline_data.csv",sep=""))
-    bldata <- bldata %>% select(SubjectID,Age,diabetes_mellitus_YN,hypertension_YN,
-                                dyslipidemia_YN,treatment_reg)
+    wher1 <- names(bldata) %in% predictores
+    wher2 <- names(bldata) %in% names(masterD)
+    wher <- wher1 & !wher2
+    bldata <- bldata[,c("SubjectID",names(bldata)[wher])]
     
     masterD <- masterD %>% left_join(bldata,by = "SubjectID")
     
+    
+    
+
     
     ###################
     ### Unadjusted PC
@@ -195,7 +207,8 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
                        Sensitivity = sen,
                        Specificity = spe,
                        PPV = ppv,
-                       NPV = npv)
+                       NPV = npv,
+                       PRED = paste(fit$pc_model_predictors,collapse="+"))
     
     
     ###################
@@ -262,7 +275,76 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
                        Sensitivity = sen,
                        Specificity = spe,
                        PPV = ppv,
-                       NPV = npv)
+                       NPV = npv,
+                       PRED = paste(fit$tdcox_model_predictors,collapse="+"))
+    
+    
+    ##########################
+    ### Unadjusted Simple Cox
+    ##########################
+    df <- as.data.frame(fit$pred_data)
+    
+    # --- 2. ROC Calculation (pROC) ---
+    what <- "Risk_cox_simple"
+    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
+    
+    # Calculate AUC and CI
+    ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
+    ci_delong_nobon <- ci(roc_obj, method = "delong",conf.level=0.95)
+    
+    auc <- round(ci_delong[2], 3)
+    lb <- round(ci_delong[1], 3)
+    ub <- round(ci_delong[3], 3)
+    lb_nobon <- round(ci_delong_nobon[1], 3)
+    ub_nobon <- round(ci_delong_nobon[3], 3)
+    
+    # --- 3. Optimal Threshold Calculation (Youden's J) ---
+    optimal_coords <- coords(roc_obj, x = "best", best.method = "youden",
+                             ret = c("threshold", "specificity", "sensitivity", "ppv", "npv"))
+    if (dim(optimal_coords)[1]>1) {
+      optimal_coords <- optimal_coords %>% arrange(threshold) %>% slice(1)
+    }
+    
+    sen <- round(optimal_coords$sensitivity,3)
+    spe <- round(optimal_coords$specificity,3)
+    ppv <- round(optimal_coords$ppv,3)
+    npv <- round(optimal_coords$npv,3)
+    
+    
+    # Conditional Optimal Threshold Label Logic
+    df$dup <- df[, what]
+    temp1 <- order(df$marker1)
+    temp2 <- order(df$dup)
+    if (all(temp1 == temp2)) {
+      # If ordering is the same, use the marker value
+      df1 <- df %>% 
+        arrange(dup) %>% 
+        filter(dup <= optimal_coords$threshold) %>% 
+        slice_tail(n = 1)
+      threshold_label <- "Marker"
+      threshold_value <- round(df1$marker1, 1)
+    } else {
+      # If ordering is different, use the raw probability threshold
+      threshold_label <-"Prob" 
+      threshold_value <- round(optimal_coords$threshold, 3)
+    }
+    
+    out3 <- data.frame(marker_name=marker_name,
+                       data_name=data_name,
+                       type = "Unadjusted",
+                       model = "Simple Cox PH",
+                       AUC = auc,
+                       LB = lb,
+                       UB = ub,
+                       LB_nobon = lb_nobon,
+                       UB_nobon = ub_nobon,
+                       Threshold_label = threshold_label,
+                       Threshold_value = threshold_value,
+                       Sensitivity = sen,
+                       Specificity = spe,
+                       PPV = ppv,
+                       NPV = npv,
+                       PRED = paste(fit$simplecox_model_predictors,collapse="+"))
     
     
     ################
@@ -276,6 +358,10 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       pred_from = 150,
       pred_to = 240
     )
+    pc_model_predictors<-fit$pc_model_predictors
+    tdcox_model_predictors <- fit$tdcox_model_predictors
+    simplecox_model_predictors <- fit$simplecox_model_predictors
+    
     
     df <- as.data.frame(fit$pred_data)
     
@@ -324,7 +410,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out3 <- data.frame(marker_name=marker_name,
+    out4 <- data.frame(marker_name=marker_name,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Partly conditional",
@@ -338,7 +424,8 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
                        Sensitivity = sen,
                        Specificity = spe,
                        PPV = ppv,
-                       NPV = npv)
+                       NPV = npv,
+                       PRED = paste(fit$pc_model_predictors,collapse="+"))
     
     
     ###################
@@ -390,7 +477,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out4 <- data.frame(marker_name=marker_name,
+    out5 <- data.frame(marker_name=marker_name,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Time dependent Cox PH",
@@ -404,13 +491,80 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
                        Sensitivity = sen,
                        Specificity = spe,
                        PPV = ppv,
-                       NPV = npv)
+                       NPV = npv,
+                       PRED = paste(fit$tdcox_model_predictors,collapse="+"))
+    
+    
+    ########################
+    ### Adjusted Simple Cox
+    ########################
+    # --- 2. ROC Calculation (pROC) ---
+    what = "Risk_cox_simple"
+    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
+    
+    # Calculate AUC and CI
+    ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
+    ci_delong_nobon <- ci(roc_obj, method = "delong",conf.level=0.95)
+    
+    auc <- round(ci_delong[2], 3)
+    lb <- round(ci_delong[1], 3)
+    ub <- round(ci_delong[3], 3)
+    lb_nobon <- round(ci_delong_nobon[1], 3)
+    ub_nobon <- round(ci_delong_nobon[3], 3)
+    
+    # --- 3. Optimal Threshold Calculation (Youden's J) ---
+    optimal_coords <- coords(roc_obj, x = "best", best.method = "youden",
+                             ret = c("threshold", "specificity", "sensitivity", "ppv", "npv"))
+    if (dim(optimal_coords)[1]>1) {
+      optimal_coords <- optimal_coords %>% arrange(threshold) %>% slice(1)
+    }
+    
+    
+    sen <- round(optimal_coords$sensitivity,3)
+    spe <- round(optimal_coords$specificity,3)
+    ppv <- round(optimal_coords$ppv,3)
+    npv <- round(optimal_coords$npv,3)
+    
+    
+    # Conditional Optimal Threshold Label Logic
+    df$dup <- df[, what]
+    temp1 <- order(df$marker1)
+    temp2 <- order(df$dup)
+    if (all(temp1 == temp2)) {
+      # If ordering is the same, use the marker value
+      df1 <- df %>% 
+        arrange(dup) %>% 
+        filter(dup <= optimal_coords$threshold) %>% 
+        slice_tail(n = 1)
+      threshold_label <- "Marker"
+      threshold_value <- round(df1$marker1, 1)
+    } else {
+      # If ordering is different, use the raw probability threshold
+      threshold_label <-"Prob" 
+      threshold_value <- round(optimal_coords$threshold, 3)
+    }
+    
+    out6 <- data.frame(marker_name=marker_name,
+                       data_name=data_name,
+                       type = "Adjusted",
+                       model = "Time dependent Cox PH",
+                       AUC = auc,
+                       LB = lb,
+                       UB = ub,
+                       LB_nobon = lb_nobon,
+                       UB_nobon = ub_nobon,
+                       Threshold_label = threshold_label,
+                       Threshold_value = threshold_value,
+                       Sensitivity = sen,
+                       Specificity = spe,
+                       PPV = ppv,
+                       NPV = npv,
+                       PRED = paste(fit$simplecox_model_predictors,collapse="+"))
     
     
     
     
-    
-    out <- rbind(out1,out2,out3,out4)
+    out <- rbind(out1,out2,out3,out4,out5,out6)
     out
   })
   
