@@ -1,60 +1,71 @@
-#' Create a Forest Plot of Area Under the Curve (AUC) with Confidence Intervals
+
+#' Create an Interval Plot (Forest Plot) for AUC Values
 #'
-#' This function generates an interval plot (similar to a forest plot) to visualize the
-#' Area Under the Curve (AUC) and its confidence intervals (CIs) for a specific
-#' biomarker across different study settings or model types derived from ROC analysis.
+#' This function generates an interval plot, commonly known as a forest plot,
+#' to visualize the Area Under the Curve (AUC) and its confidence intervals
+#' for a specific biomarker across different study settings or definitions.
+#' The plot is created using \code{ggplot2}.
 #'
-#' The function relies on the `ggplot2` package for plotting and assumes the
-#' input data frame contains specific columns for the AUC estimate, confidence interval
-#' bounds, and descriptive information about the model and data used. The AUC is a
-#' common metric in diagnostic testing and indicates the model's ability to
-#' discriminate between two classes. 
+#' @param dat A data frame containing the AUC results. This data frame is
+#'   expected to have columns like \code{marker_name}, \code{data_name},
+#'   \code{type}, \code{model}, \code{AUC}, \code{LB}, \code{UB},
+#'   \code{LB_nobon}, and \code{UB_nobon}.
+#' @param marker_nam A character string specifying the single biomarker to plot.
+#'   Must match a value in the \code{marker_name} column of \code{dat}.
+#' @param boncorrect A logical value. If \code{TRUE} (default), the plot uses
+#'   the Bonferroni-corrected confidence intervals (\code{LB} and \code{UB}).
+#'   If \code{FALSE}, it uses the uncorrected confidence intervals
+#'   (\code{LB_nobon} and \code{UB_nobon}).
 #'
-#' @param dat A data frame containing the results of AUC calculations. It must include
-#'   the following columns:
-#'   \itemize{
-#'     \item \code{AUC}: The estimated Area Under the Curve (AUC).
-#'     \item \code{LB}: The lower bound of the confidence interval for the AUC.
-#'     \item \code{UB}: The upper bound of the confidence interval for the AUC.
-#'     \item \code{marker_name}: The name of the biomarker (e.g., "BNP", "NT_pro_BNP").
-#'     \item \code{data_name}: The name of the dataset/setting used (e.g., "cady_data_ct").
-#'     \item \code{type}: The type of analysis (e.g., "Unadjusted", "Adjusted").
-#'     \item \code{model}: The specific model name/details.
-#'   }
-#' @param marker_nam A character string specifying the biomarker to be plotted
-#'   (e.g., "BNP", "NT_pro_BNP"). This parameter is used to filter the \code{dat}
-#'   and set the main plot title. Note the argument name uses \code{marker_nam} as per
-#'   the function definition.
+#' @return A \code{ggplot} object representing the interval plot.
 #'
-#' @return A \code{ggplot} object (an interval plot) visualizing the AUC estimates
-#'   and their 95\% confidence intervals across different settings.
+#' @details
+#' The function first processes the input data:
+#' \itemize{
+#'   \item It creates a human-readable label (\code{lab1}) for the biomarker
+#'     from \code{marker_name}.
+#'   \item It creates a human-readable label (\code{lab2}) for the CT definition
+#'     from \code{data_name}.
+#'   \item It combines these into a final y-axis label (\code{lab}) which includes
+#'     the CT definition, type, and model.
+#'   \item It filters the data to include only the specified \code{marker_nam}.
+#'   \item The resulting data is arranged by \code{AUC} and the \code{lab}
+#'     column is converted to a factor to ensure the plot is ordered by AUC.
+#' }
+#' The plot itself is an interval plot showing the AUC estimate as a point and
+#' the confidence interval as a horizontal error bar. A vertical dashed line
+#' is added at an AUC of 0.5 for reference.
+#' 
 #'
 #' @importFrom dplyr mutate case_when filter arrange
-#' @importFrom ggplot2 ggplot aes geom_errorbarh geom_point geom_vline labs theme_minimal theme element_text
-#' @export
+#' @importFrom ggplot2 ggplot aes geom_errorbarh labs geom_point geom_vline theme_minimal theme element_text
 #'
 #' @examples
 #' \dontrun{
-#' # Create a dummy data frame resembling the expected input structure
-#' results_auc_df <- data.frame(
-#'   AUC = c(0.75, 0.82, 0.68, 0.90),
-#'   LB = c(0.68, 0.75, 0.60, 0.85),
-#'   UB = c(0.82, 0.89, 0.76, 0.95),
-#'   marker_name = c("NT_pro_BNP", "NT_pro_BNP", "NT_pro_BNP", "NT_pro_BNP"),
-#'   data_name = c("cady_data_ct", "cady_data_max_50", "cady_data_drug", "cady_data_mp_53"),
-#'   type = c("Adjusted", "Unadjusted", "Adjusted", "Unadjusted"),
-#'   model = c("Model A", "Model B", "Model C", "Model D")
-#' )
+#' # Assuming 'auc_data' is a data frame structured as expected
+#' # and includes results for 'BNP'
 #'
-#' # Generate the plot for NT-proBNP
-#' plot_auc_ntprobnp <- interval_plot_auc(results_auc_df, "NT_pro_BNP")
-#' print(plot_auc_ntprobnp)
+#' # Plot with Bonferroni correction (default)
+#' p_bnp_corrected <- interval_plot_auc(
+#'   dat = auc_data,
+#'   marker_nam = "BNP",
+#'   boncorrect = TRUE
+#' )
+#' print(p_bnp_corrected)
+#'
+#' # Plot without Bonferroni correction
+#' p_bnp_uncorrected <- interval_plot_auc(
+#'   dat = auc_data,
+#'   marker_nam = "BNP",
+#'   boncorrect = FALSE
+#' )
+#' print(p_bnp_uncorrected)
 #' }
-#' 
+#'
+#' @export
 #' 
 
-
-interval_plot_auc <- function(dat,marker_nam) {
+interval_plot_auc <- function(dat,marker_nam,boncorrect = TRUE) {
   
   dat <- dat %>% mutate(lab1 = case_when(marker_name=="BNP"~"BNP",
                                          marker_name=="NT_pro_BNP"~"NT-proBNP",
@@ -80,21 +91,34 @@ interval_plot_auc <- function(dat,marker_nam) {
 
   
   # Create the forest plot
-  plot_intervals <- ggplot2::ggplot(dat, ggplot2::aes(x = AUC, y = lab)) +
-    # Add horizontal lines for confidence intervals
-    ggplot2::geom_errorbarh(ggplot2::aes(xmin = LB, xmax = UB), 
-                            height = 0.2, linewidth = 1.2) +
-    # Add points for the estimate
+  if (boncorrect) {
+    plot_intervals <- ggplot2::ggplot(dat, ggplot2::aes(x = AUC, y = lab)) +
+      ggplot2::geom_errorbarh(ggplot2::aes(xmin = LB, xmax = UB), 
+                              height = 0.2, linewidth = 1.2)+
+      # Define labels and titles with large font size
+      ggplot2::labs(
+        title = paste("Interval Plot of AUC for ",dat$lab1[1],sep=""),
+        subtitle = "(With confidence intervals using DeLong method and Bonferroni corrected)",
+        x = "Area Under the Curve",
+        y = "Setting"
+      )
+  } else {
+    plot_intervals <- ggplot2::ggplot(dat, ggplot2::aes(x = AUC, y = lab)) +
+      ggplot2::geom_errorbarh(ggplot2::aes(xmin = LB_nobon, xmax = UB_nobon), 
+                              height = 0.2, linewidth = 1.2)+
+      # Define labels and titles with large font size
+      ggplot2::labs(
+        title = paste("Interval Plot of AUC for ",dat$lab1[1],sep=""),
+        subtitle = "(With confidence intervals using DeLong method)",
+        x = "Area Under the Curve",
+        y = "Setting"
+      )
+  }
+  
+  plot_intervals <- plot_intervals +
     ggplot2::geom_point(size = 3) +
     # Add a vertical reference line at 0
-    ggplot2::geom_vline(xintercept = 0.5, linetype = "dashed", color = "blue", linewidth = 2) +
-    # Define labels and titles with large font size
-    ggplot2::labs(
-      title = paste("Interval Plot of AUC for ",dat$lab1[1],sep=""),
-      subtitle = "(With confidence intervals using DeLong method)",
-      x = "Area Under the Curve",
-      y = "Setting"
-    ) +
+    ggplot2::geom_vline(xintercept = 0.5, linetype = "dashed", color = "blue", linewidth = 2)  +
     # Customize the theme to increase font sizes
     ggplot2::theme_minimal(base_size = 18) +
     ggplot2::theme(
