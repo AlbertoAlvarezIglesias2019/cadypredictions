@@ -404,6 +404,9 @@ predict_risk <- function(datos = NULL,
     filter(set=="test")%>%
     filter(tstart==pred_from) 
   
+  ndd <- ndd[,c("SubjectID",marker_name_temp,fit_tdcox_pred)]
+  ndd <- ndd %>% na.omit()
+  
   aa <- summary(survfit(fit_tdcox,newdata = ndd,se.fit=FALSE),times = pred_to )
   ndd$Risk_TDcox <- as.numeric(1-aa$surv)
   out_TDcox <- ndd %>% select(SubjectID,Risk_TDcox)
@@ -508,6 +511,9 @@ predict_risk <- function(datos = NULL,
   ###################################################
   ndd <- masterD %>% 
     filter(set=="test")
+  
+  ndd <- ndd[,c("SubjectID",marker_name_temp,fit_cox_simple_pred)]
+  ndd <- ndd %>% na.omit()
   
   #aa <- summary(survfit(fit_cox_simple,newdata = ndd,se.fit=FALSE),times = pred_to )
   aa1 <- summary(survfit(fit_cox_simple,newdata = ndd,se.fit=FALSE),times = pred_from)
