@@ -21,13 +21,24 @@
 #' @param predictores A character vector specifying the names of the covariates
 #'   to be included in the 'Adjusted' models. These variables must be present
 #'   in the \code{baseline_data.csv} file. Defaults to a predefined set of six covariates.
+#' @param saveopt A character string (optional). If provided, the final aggregated
+#'   results data frame (\code{OUT}) will be saved to \code{dir_out} as a CSV and RData
+#'   file using this string as the file name prefix. If \code{NULL} (default), no file is saved.
+#'   
 #'
-#' @return The function does not explicitly return a value but saves the
-#'   aggregated results as an RData file and a CSV file named \code{RESULTS.RData}
-#'   and \code{RESULTS.csv} in the directory specified by \code{dir_out}.
-#'   The saved data frame contains the Hazard Ratios (HR), 95\% Confidence Intervals
-#'   (LB/UB), and P-values (PVAL) for every combination of marker, data definition,
-#'   adjustment status, and model type.
+#' @return A data frame (\code{OUT}) containing the summarized results for every
+#'   combination of data, marker, adjustment type (Unadjusted/Adjusted), and model,
+#'   including the following columns:
+#' \itemize{
+#'   \item \code{marker_name}: The biomarker analyzed.
+#'   \item \code{data_name}: The dataset used.
+#'   \item \code{type}: "Unadjusted" or "Adjusted".
+#'   \item \code{model}: The type of survival model ("Partly conditional", "Time dependent Cox PH", or "Simple Cox PH").
+#'   \item \code{HR}: The calculated Hazard Ratio for the biomarker ($\text{log}_2$ transformed). 
+#'   \item \code{LB}, \code{UB}: The lower and upper bounds of the 95% Confidence Interval for the HR.
+#'   \item \code{PVAL}: The p-value for the biomarker's coefficient.
+#'   \item \code{PRED}: A string listing the final set of predictors used in the model (this will dynamically change if the model fitting required dropping predictors due to convergence warnings).
+#' }
 #'
 #' @details
 #' The function first defines a grid (\code{pointer}) encompassing all combinations
@@ -82,7 +93,8 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                    dir_out = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/results/",
                    dat_nam = c("cady_data_ct","cady_data_drug","cady_data_max_50","cady_data_max_53","cady_data_mp_50","cady_data_mp_53"),
                    mar_nam = c("BNP","NT_pro_BNP","CRP","hsTnI_STAT","Galectin_3"),
-                   predictores = c("Age","lvef_mp_bas","diabetes_mellitus_YN","hypertension_YN","dyslipidemia_YN","treatment_reg") ){
+                   predictores = c("Age","lvef_mp_bas","diabetes_mellitus_YN","hypertension_YN","dyslipidemia_YN","treatment_reg"),
+                   saveopt = NULL){
   
   library(cadypredictions)
   library(tidyverse)
@@ -317,8 +329,12 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
   
   OUT <- do.call("rbind",temp)
   
-  save(OUT,file = paste(dir_out,"RESULTS.RData",sep="") )
-  write.csv(OUT,file = paste(dir_out,"RESULTS.csv",sep=""),row.names = FALSE)
+  if (!is.null(saveopt)) {
+    save(OUT,file = paste(dir_out,saveopt,".RData",sep="") )
+    write.csv(OUT,file = paste(dir_out,,saveopt,".csv",sep=""),row.names = FALSE)
+  }
+
+  OUT
 }
 
 
