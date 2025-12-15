@@ -141,15 +141,39 @@ predict_risk <- function(datos = NULL,
     filter(time_to_sample>=0) %>% mutate(log_time_to_sample = log2(time_to_sample+1)) %>% 
     filter(time_to_event>=time_to_sample)%>% 
     filter(set=="training")
-  pccox <-  PC.Cox(
-    id = "SubjectID",
-    stime = "time_to_event",
-    status = "status",
-    measurement.time = "time_to_sample",  ##survival time and measurement time must be on the same scale.
-    predictors =c("log_time_to_sample", marker_name_temp,Predictors),
-    data = DD)
+  #pccox <-  PC.Cox(
+  #  id = "SubjectID",
+  #  stime = "time_to_event",
+  #  status = "status",
+  #  measurement.time = "time_to_sample",  ##survival time and measurement time must be on the same scale.
+  #  predictors =c("log_time_to_sample", marker_name_temp,Predictors),
+  #  data = DD)
+  
+  ### CHECK if it gets a warning and reduce the number of predictors
+  reploop <- TRUE
+  temppred <- Predictors
+  while (reploop) {
+    pccox <- tryCatch({
+      PC.Cox(
+        id = "SubjectID",
+        stime = "time_to_event",
+        status = "status",
+        measurement.time = "time_to_sample",  ##survival time and measurement time must be on the same scale.
+        predictors =c("log_time_to_sample", marker_name_temp,temppred),
+        data = DD)
+    }, warning = function(w) {
+      TRUE
+    })
+    if (class(pccox)=="logical") {
+      temppred <- temppred[-length(temppred)]
+      reploop<-TRUE
+    } else {
+      reploop<-FALSE}
+  }
+
 
   fit_pccox <- pccox$model.fit
+  fit_pccox_pred <- temppred 
   
   ################
   #**
@@ -329,12 +353,41 @@ predict_risk <- function(datos = NULL,
   #masterD <- tmerge(ddd1,dat2,id = SubjectID,marker = tdc(time_to_sample,marker)) 
   
   ddd <- masterD %>% filter(set=="training")
-  if (is.null(Predictors)) {
-    formu <- as.formula(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
-      formu <- as.formula(paste(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep=""),"+",paste(Predictors,collapse="+"),sep=""))
-    }
   
-  fit_tdcox <- coxph(formu,data=ddd)
+  #### OLD
+  
+  #if (is.null(Predictors)) {
+  #  formu <- as.formula(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
+  #    formu <- as.formula(paste(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep=""),"+",paste(Predictors,collapse="+"),sep=""))
+  #  }
+  #fit_tdcox <- coxph(formu,data=ddd)
+  
+  #### OLD
+  
+  ### CHECK if it gets a warning and reduce the number of predictors
+  reploop <- TRUE
+  temppred <- Predictors
+  while (reploop) {
+    fit_tdcox <- tryCatch({
+      
+      if (is.null(Predictors)) {
+        formu <- as.formula(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
+          formu <- as.formula(paste(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep=""),"+",paste(temppred,collapse="+"),sep=""))
+        }
+      
+      coxph(formu,data=ddd)
+      
+    }, warning = function(w) {
+      TRUE
+    })
+    if (class(fit_tdcox)=="logical") {
+      temppred <- temppred[-length(temppred)]
+      reploop<-TRUE
+    } else {
+      reploop<-FALSE}
+  }
+  
+  fit_tdcox_pred <- temppred 
   
   
   
@@ -405,12 +458,42 @@ predict_risk <- function(datos = NULL,
   
   ddd <- masterD %>% filter(set=="training")
   
-  if (is.null(Predictors)) {
-    formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
-      formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),"+",paste(Predictors,collapse="+"),sep=""))
-    }
   
-  fit_cox_simple <- coxph(formu,data=ddd)
+  #### OLD
+  
+  #if (is.null(Predictors)) {
+  #  formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
+  #    formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),"+",paste(Predictors,collapse="+"),sep=""))
+  #  }
+  
+  #fit_cox_simple <- coxph(formu,data=ddd)
+  
+  #### OLD
+  
+  ### CHECK if it gets a warning and reduce the number of predictors
+  reploop <- TRUE
+  temppred <- Predictors
+  while (reploop) {
+    fit_cox_simple <- tryCatch({
+      
+      if (is.null(Predictors)) {
+        formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),sep="")) } else {
+          formu <- as.formula(paste(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),sep=""),"+",paste(temppred,collapse="+"),sep=""))
+        }
+      
+      coxph(formu,data=ddd)
+      
+    }, warning = function(w) {
+      TRUE
+    })
+    if (class(fit_cox_simple)=="logical") {
+      temppred <- temppred[-length(temppred)]
+      reploop<-TRUE
+    } else {
+      reploop<-FALSE}
+  }
+  
+  fit_cox_simple_pred <- temppred 
   
   
   
@@ -443,6 +526,9 @@ predict_risk <- function(datos = NULL,
   out <- out %>% select(marker_name:status,predict_from = time_to_sample,predict_to,all_of(marker_name_temp),Risk_PC,Risk_TDcox,Risk_cox_simple)
   
   
-  list(pred_data = out,pc_model = fit_pccox,tdcox_model = fit_tdcox,simplecox_model = fit_cox_simple )
+  list(pred_data = out,
+       pc_model = fit_pccox,pc_model_predictors = fit_pccox_pred,
+       tdcox_model = fit_tdcox,tdcox_model_predictors = fit_tdcox_pred,
+       simplecox_model = fit_cox_simple,simplecox_model_predictors = fit_cox_simple_pred)
 }
 
