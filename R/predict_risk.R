@@ -139,6 +139,7 @@ predict_risk <- function(datos = NULL,
   ########################################
   DD <- masterD %>% 
     filter(time_to_sample>=0) %>% mutate(log_time_to_sample = log2(time_to_sample+1)) %>% 
+    filter(time_to_event>=time_to_sample)%>% 
     filter(set=="training")
   pccox <-  PC.Cox(
     id = "SubjectID",
