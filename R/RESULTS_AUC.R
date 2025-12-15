@@ -557,7 +557,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     out6 <- data.frame(marker_name=marker_name,
                        data_name=data_name,
                        type = "Adjusted",
-                       model = "Time dependent Cox PH",
+                       model = "Simple Cox PH",
                        AUC = auc,
                        LB = lb,
                        UB = ub,
@@ -582,7 +582,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
   
   if (!is.null(saveopt)) {
     save(OUT,file = paste(dir_out,saveopt,".RData",sep="") )
-    write.csv(OUT,file = paste(dir_out,,saveopt,".csv",sep=""),row.names = FALSE)
+    write.csv(OUT,file = paste(dir_out,saveopt,".csv",sep=""),row.names = FALSE)
   }
   
   OUT
