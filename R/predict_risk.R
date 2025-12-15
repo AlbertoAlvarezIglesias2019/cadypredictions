@@ -4,7 +4,10 @@
 #' fits three distinct survival models—a Partly Conditional Cox (PC.Cox) model, a traditional Time-Dependent Cox
 #' (TD-Cox) model, and a simple Cox model using only baseline marker value—and generates comparative risk predictions
 #' for the test set population.
-#'
+#' 
+#' A key feature is the dynamic reduction of covariates (`Predictors`) in the model fitting process whenever a 
+#' convergence warning (often due to perfect separation or collinearity) is detected during the Cox model fitting.
+#' 
 #' @param datos An optional data frame containing the primary longitudinal data.
 #' If provided (\code{NULL} is the default), this data is used instead of loading
 #' the file specified by \code{data_name}.
@@ -12,9 +15,9 @@
 #' This parameter is only used if \code{datos} is \code{NULL}. The function expects the file at the hardcoded path:
 #' "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/".
 #' @param marker_name A character vector string specifying the name of the longitudinal marker(s) column (e.g., "NT_pro_BNP")
-#' used as a time-dependent predictor (there could be more than one biomarker).
+#' used as a time-dependent predictor (there could be more than one biomarker). 
 #' @param Predictors A character vector specifying names of time-independent covariates (e.g., "Age", "treatment_reg")
-#' to be included in all survival models.
+#' to be included in all survival models. The list of predictors is dynamically reduced if convergence issues are encountered.
 #' @param log_marker A logical value. If \code{TRUE}, the marker variable is transformed using \code{log2()} before
 #' model fitting and interpolation. Defaults to \code{FALSE}.
 #' @param pred_from An integer specifying the time point (e.g., days) at which the marker value is interpolated,
@@ -23,12 +26,15 @@
 #' \code{pred_to} - \code{pred_from}. Defaults to 240.
 #'
 #' @return A list containing:
-#' \item{pred_data}{A data frame (tibble) containing subject-level data, the interpolated marker value at \code{pred_from},
-#' and three distinct risk predictions for the test set: \code{Risk_PC} (from PC.Cox), \code{Risk_TDcox} (from TD-Cox),
-#' and \code{Risk_cox_simple} (from Simple Baseline Cox).}
-#' \item{pc_model}{The fitted Partly Conditional Cox model object on the training set.}
-#' \item{tdcox_model}{The fitted Time-Dependent Cox model object on the training set.}
-#' \item{simplecox_model}{The fitted Simple Baseline Cox model object on the training set.}
+#' \itemize{
+#'   \item \code{pred_data}: A data frame containing the SubjectID, selected predictors,
+#'         event status, the prediction time window (\code{predict_from} to \code{predict_to}),
+#'         and the calculated risks from the three models: \code{Risk_PC}, \code{Risk_TDcox}, and \code{Risk_cox_simple}.
+#'   \item \code{pc_model}, \code{tdcox_model}, \code{simplecox_model}: The fitted model objects
+#'         for the Partly Conditional Cox, Time-Dependent Covariate Cox, and Simple Baseline Cox models, respectively.
+#'   \item \code{pc_model_predictors}, \code{tdcox_model_predictors}, \code{simplecox_model_predictors}:
+#'         The final character vectors of predictors used in each model after automatic reduction, if any.
+#' }
 #'
 #' @details
 #' This function performs a rigorous comparison of three survival prediction methods.
