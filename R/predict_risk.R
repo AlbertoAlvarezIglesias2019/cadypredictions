@@ -355,6 +355,9 @@ predict_risk <- function(datos = NULL,
   dat1 <- masterD[,c("SubjectID",Predictors,"time_to_event", "status","set")] %>% distinct()
   dat2 <- masterD[,c("SubjectID",marker_name_temp,"time_to_sample")] 
   
+  ##remove if time to event == 0
+  dat1 <- dat1 %>% filter(time_to_event>0)
+  
   ddd1 <- tmerge(dat1,dat1,id=SubjectID,death=event(time_to_event,status))
   
   texto <- paste(paste(marker_name_temp,"=tdc(time_to_sample,",marker_name_temp,")",sep=""),collapse=",")
