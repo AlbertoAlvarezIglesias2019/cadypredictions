@@ -137,9 +137,11 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     wher1 <- names(bldata) %in% predictores
     wher2 <- names(bldata) %in% names(masterD)
     wher <- wher1 & !wher2
-    bldata <- bldata[,c("SubjectID",names(bldata)[wher])]
     
-    masterD <- masterD %>% left_join(bldata,by = "SubjectID")
+    if (!all(!wher) ) {
+      bldata <- bldata[,c("SubjectID",names(bldata)[wher])]
+      masterD <- masterD %>% left_join(bldata,by = "SubjectID")
+    }
     
     
     
