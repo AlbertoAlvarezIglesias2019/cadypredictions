@@ -133,11 +133,12 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     wher1 <- names(bldata) %in% predictores
     wher2 <- names(bldata) %in% names(masterD)
     wher <- wher1 & !wher2
-    bldata <- bldata[,c("SubjectID",names(bldata)[wher])]
-    #bldata <- bldata %>% select(SubjectID,Age,diabetes_mellitus_YN,hypertension_YN,
-    #                            dyslipidemia_YN,treatment_reg)
     
-    masterD <- masterD %>% left_join(bldata,by = "SubjectID")
+    if (!all(!wher) ) {
+      bldata <- bldata[,c("SubjectID",names(bldata)[wher])]
+      masterD <- masterD %>% left_join(bldata,by = "SubjectID")
+    }
+
     
     
     ###################
