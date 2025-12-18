@@ -64,7 +64,11 @@ interval_plot_hr <- function(dat,marker_nam) {
                                          data_name =="cady_data_max_50"~"CT LLN=50 (max)",
                                          data_name =="cady_data_max_53"~"CT LLN=53 (max)",
                                          data_name =="cady_data_mp_50"~"CT LLN=50 (middle point)",
-                                         data_name == "cady_data_mp_53"~"CT LLN=53 (middle point)"))
+                                         data_name == "cady_data_mp_53"~"CT LLN=53 (middle point)",
+                                         data_name == "cady_data_ct_mace"~"Any CT or MACE (heart failure)",
+                                         data_name == "cady_data_ct"~"Any CT",
+                                         data_name == "cady_data_mace"~"MACE (heart failure)",
+                                         data_name == "cady_data_death"~"Detah from any cause"))
   
 
   dat <- dat %>% mutate(lab = paste(lab2,"; ",type," (",model,")",sep=""))
