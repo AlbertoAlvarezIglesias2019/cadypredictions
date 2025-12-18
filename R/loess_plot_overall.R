@@ -79,13 +79,14 @@ loess_plot_overall <- function(data, x_var, y_var, group_var,
   group_sym <- sym(group_var)
   
   plot <- ggplot(data, aes(x = !!x_sym, y = !!y_sym, group = !!group_sym)) +
-    # Participant trajectories (grouped)
+    # Participant trajectories
     geom_line(color = "gray60", alpha = line_alpha) +
     
-    # Global smoother across all data (not grouped)
+    # Global loess smoother
     geom_smooth(
       aes(group = 1),
-      method = "loess", se = TRUE,
+      method = "loess",
+      se = TRUE,
       color = smooth_color,
       fill = scales::alpha(smooth_color, 0.25),
       linewidth = smooth_size,
@@ -110,5 +111,5 @@ loess_plot_overall <- function(data, x_var, y_var, group_var,
   if (!is.null(x_limits)) plot <- plot + xlim(x_limits)
   if (!is.null(y_limits)) plot <- plot + ylim(y_limits)
   
-  print(plot)
+  plot
 }
