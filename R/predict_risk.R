@@ -172,14 +172,25 @@ predict_risk <- function(datos = NULL,
     })
     if (class(pccox)=="logical") {
       temppred <- temppred[-length(temppred)]
-      reploop<-TRUE
+      if (length(temppred)==0) {
+        reploop<-FALSE
+        pccox <- PC.Cox(
+          id = "SubjectID",
+          stime = "time_to_event",
+          status = "status",
+          measurement.time = "time_to_sample",  ##survival time and measurement time must be on the same scale.
+          predictors =c("log_time_to_sample", marker_name_temp),
+          data = DD)
+        } else {reploop<-TRUE}
     } else {
       reploop<-FALSE}
   }
 
 
   fit_pccox <- pccox$model.fit
-  fit_pccox_pred <- temppred 
+  #fit_pccox_pred <- temppred 
+  if (length(temppred)==0) {fit_pccox_pred <- NULL} else {fit_pccox_pred <- temppred}
+  
   
   ################
   #**
@@ -395,12 +406,17 @@ predict_risk <- function(datos = NULL,
     })
     if (class(fit_tdcox)=="logical") {
       temppred <- temppred[-length(temppred)]
-      reploop<-TRUE
+      if (length(temppred)==0) {
+        reploop<-FALSE
+        formu <- as.formula(paste("Surv(tstart,tstop,death)~",paste(marker_name_temp,collapse="+"),sep="")) 
+        fit_tdcox <- coxph(formu,data=ddd)
+        } else {reploop<-TRUE}
     } else {
       reploop<-FALSE}
   }
   
-  fit_tdcox_pred <- temppred 
+  #fit_tdcox_pred <- temppred 
+  if (length(temppred)==0) {fit_tdcox_pred <- NULL} else {fit_tdcox_pred <- temppred}
   
   
   
@@ -504,12 +520,16 @@ predict_risk <- function(datos = NULL,
     })
     if (class(fit_cox_simple)=="logical") {
       temppred <- temppred[-length(temppred)]
-      reploop<-TRUE
+      if (length(temppred)==0) {
+        reploop<-FALSE
+        formu <- as.formula(paste("Surv(time_to_event,status)~",paste(marker_name_temp,collapse="+"),sep=""))
+        fit_cox_simple <- coxph(formu,data=ddd)
+        } else {reploop<-TRUE}
     } else {
       reploop<-FALSE}
   }
   
-  fit_cox_simple_pred <- temppred 
+  if (length(temppred)==0) {fit_cox_simple_pred <- NULL} else {fit_cox_simple_pred <- temppred}
   
   
   
