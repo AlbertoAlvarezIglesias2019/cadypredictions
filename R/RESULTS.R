@@ -24,6 +24,8 @@
 #' @param saveopt A character string (optional). If provided, the final aggregated
 #'   results data frame (\code{OUT}) will be saved to \code{dir_out} as a CSV and RData
 #'   file using this string as the file name prefix. If \code{NULL} (default), no file is saved.
+#' @param ch Logical. If \code{TRUE}, calculates the difference between the 
+#' current marker value and the baseline value (\code{marker - marker_bl}) for modelling.
 #'   
 #'
 #' @return A data frame (\code{OUT}) containing the summarized results for every
@@ -94,7 +96,8 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                    dat_nam = c("cady_data_ct","cady_data_drug","cady_data_max_50","cady_data_max_53","cady_data_mp_50","cady_data_mp_53"),
                    mar_nam = c("BNP","NT_pro_BNP","CRP","hsTnI_STAT","Galectin_3"),
                    predictores = c("Age","lvef_mp_bas","diabetes_mellitus_YN","hypertension_YN","dyslipidemia_YN","treatment_reg"),
-                   saveopt = NULL){
+                   saveopt = NULL,
+                   ch = FALSE){
   
   library(cadypredictions)
   library(tidyverse)
@@ -110,11 +113,12 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     #marker_name = "NT_pro_BNP"
     data_name <- as.character(pointer$data_name[kkk])
     marker_name <- as.character(pointer$marker_name[kkk])
+    marker_name_lab <- if_else(ch,paste(marker_name," (Change)",sep=""),marker_name)
     
     #data_name <- "cady_data_ct" 
     #marker_name <- "hsTnI_STAT"
     
-    cat("\n\n\n Row = ",kkk,"; Data and Biomarker: ",data_name," and ",marker_name,"\n\n")  
+    cat("\n\n\n Row = ",kkk,"; Data and Biomarker: ",data_name," and ",marker_name_lab,"\n\n")  
     pa <- paste(dir_in,data_name,".csv",sep="")
     masterD <- read.csv(pa)
     #masterD <- masterD %>% select(SubjectID,BNP,NT_pro_BNP,CRP,hsTnI_STAT,Galectin_3,
@@ -149,7 +153,8 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
       marker_name = marker_name,
       log_marker = TRUE,
       pred_from = 150,
-      pred_to = 240
+      pred_to = 240,
+      change = ch
     )
     
 
@@ -168,7 +173,7 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     pval <- format(pval,nsmall=3)
     pred <- paste(fit$pc_model_predictors,collapse="+")
     
-    out1 <- data.frame(marker_name=marker_name,
+    out1 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Unadjusted",
                        model = "Partly conditional",
@@ -194,7 +199,7 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     pval <- format(pval,nsmall=3)
     pred <- paste(fit$tdcox_model_predictors,collapse="+")
     
-    out2 <- data.frame(marker_name=marker_name,
+    out2 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Unadjusted",
                        model = "Time dependent Cox PH",
@@ -208,20 +213,20 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     ##########################
     ### Unadjusted Simple Cox
     ##########################
-    hr <- exp(as.numeric(fit$simplecox_model$coefficients["marker1"]))
-    wher <- row.names(confint(fit$simplecox_model)) %in% "marker1"
+    hr <- exp(as.numeric(fit$simplecox_model$coefficients["marker1_bl"]))
+    wher <- row.names(confint(fit$simplecox_model)) %in% "marker1_bl"
     lb <- exp(as.numeric(confint(fit$simplecox_model)[wher,][1]))
     ub <- exp(as.numeric(confint(fit$simplecox_model)[wher,][2]))
     hr <- round(hr,2)
     lb <- round(lb,2)
     ub <- round(ub,2)
-    wher <- row.names(summary(fit$simplecox_model)$coefficients) %in% "marker1"
+    wher <- row.names(summary(fit$simplecox_model)$coefficients) %in% "marker1_bl"
     pval <- summary(fit$simplecox_model)$coefficients[wher,"Pr(>|z|)"]
     pval <- round(pval,3)
     pval <- format(pval,nsmall=3)
     pred <- paste(fit$simplecox_model_predictors,collapse="+")
     
-    out3 <- data.frame(marker_name=marker_name,
+    out3 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Unadjusted",
                        model = "Simple Cox PH",
@@ -241,7 +246,8 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
       Predictors = predictores,
       log_marker = TRUE,
       pred_from = 150,
-      pred_to = 240
+      pred_to = 240,
+      change = ch
     )
     
     hr <- exp(as.numeric(fit$pc_model$coefficients["marker1"]))
@@ -257,7 +263,7 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     pval <- format(pval,nsmall=3)
     pred <- paste(fit$pc_model_predictors,collapse="+")
     
-    out4 <- data.frame(marker_name=marker_name,
+    out4 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Partly conditional",
@@ -287,7 +293,7 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     pval <- format(pval,nsmall=3)
     pred <- paste(fit$tdcox_model_predictors,collapse="+")
     
-    out5 <- data.frame(marker_name=marker_name,
+    out5 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Time dependent Cox PH",
@@ -301,20 +307,20 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
     #########################
     ### Adjusted Simple Cox
     #########################
-    hr <- exp(as.numeric(fit$simplecox_model$coefficients["marker1"]))
-    wher <- row.names(confint(fit$simplecox_model)) %in% "marker1"
+    hr <- exp(as.numeric(fit$simplecox_model$coefficients["marker1_bl"]))
+    wher <- row.names(confint(fit$simplecox_model)) %in% "marker1_bl"
     lb <- exp(as.numeric(confint(fit$simplecox_model)[wher,][1]))
     ub <- exp(as.numeric(confint(fit$simplecox_model)[wher,][2]))
     hr <- round(hr,2)
     lb <- round(lb,2)
     ub <- round(ub,2)
-    wher <- row.names(summary(fit$simplecox_model)$coefficients) %in% "marker1"
+    wher <- row.names(summary(fit$simplecox_model)$coefficients) %in% "marker1_bl"
     pval <- summary(fit$simplecox_model)$coefficients[wher,"Pr(>|z|)"]
     pval <- round(pval,3)
     pval <- format(pval,nsmall=3)
     pred <- paste(fit$simplecox_model_predictors,collapse="+")
     
-    out6 <- data.frame(marker_name=marker_name,
+    out6 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Simple Cox PH",
