@@ -23,6 +23,9 @@
 #' @param marker_nam A character string specifying the biomarker to be plotted
 #'   (e.g., "BNP", "NT_pro_BNP"). This parameter is used to filter the \code{dat}
 #'   and set the main plot title.
+#' @param bc Numeric. The p-value threshold for significance. If \code{NULL}, 
+#' a Bonferroni correction is calculated as \code{0.05 / nrow(dat)}.
+#' 
 #'
 #' @return A \code{ggplot} object (a forest plot) visualizing the Hazard Ratios
 #'   and their 95\% confidence intervals across different settings.
