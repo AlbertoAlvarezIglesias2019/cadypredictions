@@ -71,7 +71,12 @@ interval_plot_auc <- function(dat,marker_nam,boncorrect = TRUE) {
                                          marker_name=="NT_pro_BNP"~"NT-proBNP",
                                          marker_name=="CRP"~"CRP",
                                          marker_name=="hsTnI_STAT"~"hs-Troponin I",
-                                         marker_name=="Galectin_3"~"Galectin-3"))
+                                         marker_name=="Galectin_3"~"Galectin-3",
+                                         marker_name=="BNP (Change)"~"BNP (Change)",
+                                         marker_name=="NT_pro_BNP (Change)"~"NT-proBNP (Change)",
+                                         marker_name=="CRP (Change)"~"CRP (Change)",
+                                         marker_name=="hsTnI_STAT (Change)"~"hs-Troponin I (Change)",
+                                         marker_name=="Galectin_3 (Change)"~"Galectin-3 (Change)"))
   
   dat <- dat %>% mutate(lab2 = case_when(data_name =="cady_data_ct"~"Any CT definition",
                                          data_name =="cady_data_drug"~"CT drug",
