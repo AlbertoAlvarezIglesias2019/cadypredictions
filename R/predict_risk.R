@@ -579,7 +579,7 @@ predict_risk <- function(datos = NULL,
     filter(set=="test")
   
   ndd <- ndd[,c("SubjectID",marker_name_temp_bl,fit_cox_simple_pred)]
-  ndd <- ndd %>% na.omit()
+  ndd <- ndd %>% na.omit() %>% distinct()
   
   #aa <- summary(survfit(fit_cox_simple,newdata = ndd,se.fit=FALSE),times = pred_to )
   aa1 <- summary(survfit(fit_cox_simple,newdata = ndd,se.fit=FALSE),times = pred_from)
