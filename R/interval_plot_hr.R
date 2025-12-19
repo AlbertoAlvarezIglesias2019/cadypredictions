@@ -50,9 +50,9 @@
 #' }
 
 
-interval_plot_hr <- function(dat,marker_nam) {
+interval_plot_hr <- function(dat,marker_nam,bc = NULL) {
   
-  bc <- 0.05/dim(dat)[1]
+  if (is.null(bc)) bc <- 0.05/dim(dat)[1]
   dat <- dat %>% mutate(lab1 = case_when(marker_name=="BNP"~"BNP",
                                          marker_name=="NT_pro_BNP"~"NT-proBNP",
                                          marker_name=="CRP"~"CRP",
