@@ -23,6 +23,12 @@
 #' @param saveopt A character string (optional). If provided, the final aggregated
 #'   results data frame (\code{OUT}) will be saved to \code{dir_out} as a CSV and RData
 #'   file using this string as the file name prefix. If \code{NULL} (default), no file is saved.
+#' @param ch Logical. If \code{TRUE}, calculates the difference between the 
+#' current marker value and the baseline value (\code{marker - marker_bl}) for modelling.
+#' @param bc Numeric. Confidence level for the AUC intervals. If \code{NULL}, it 
+#' automatically calculates a Bonferroni-corrected level based on the number of 
+#' comparisons (4 models per marker-dataset pair). The formula is \code{bc <- 1-0.05/(number of comparisons*4)}
+#' 
 #'   
 #' @return A data frame (\code{OUT}) containing the performance metrics for every
 #'   combination of data, marker, adjustment type, and model. Columns include:
@@ -95,7 +101,9 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
                     dat_nam = c("cady_data_ct","cady_data_drug","cady_data_max_50","cady_data_max_53","cady_data_mp_50","cady_data_mp_53"),
                     mar_nam = c("BNP","NT_pro_BNP","CRP","hsTnI_STAT","Galectin_3"),
                     predictores = c("Age","lvef_mp_bas","diabetes_mellitus_YN","hypertension_YN","dyslipidemia_YN","treatment_reg"),
-                    saveopt = NULL){
+                    saveopt = NULL,
+                    ch = FALSE,
+                    bc = NULL){
   
   
   library(cadypredictions)
@@ -107,7 +115,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
   pointer <- expand.grid(data_name = dat_nam,
                          marker_name = mar_nam)
   
-  bc <- 1-0.05/(dim(pointer)[1]*4)
+  if (is.null(bc)) bc <- 1-0.05/(dim(pointer)[1]*4)
   
   
   temp <- lapply(1:dim(pointer)[1],function (kkk){
@@ -115,11 +123,12 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     #marker_name = "NT_pro_BNP"
     data_name <- as.character(pointer$data_name[kkk])
     marker_name <- as.character(pointer$marker_name[kkk])
+    marker_name_lab <- if_else(ch,paste(marker_name," (Change)",sep=""),marker_name)
     
     #data_name <- "cady_data_max_50" 
     #marker_name <- "Galectin_3"
-    
-    cat("\n\n\n",data_name," and ",marker_name,"\n\n")  
+
+    cat("\n\n\n Row = ",kkk,"; Data and Biomarker: ",data_name," and ",marker_name_lab,"\n\n")  
     pa <- paste(dir_in,data_name,".csv",sep="")
     
     pa <- paste(dir_in,data_name,".csv",sep="")
@@ -155,14 +164,16 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       marker_name = marker_name,
       log_marker = TRUE,
       pred_from = 150,
-      pred_to = 240
+      pred_to = 240,
+      change = ch
     )
     
     df <- as.data.frame(fit$pred_data)
     
     # --- 2. ROC Calculation (pROC) ---
     what <- "Risk_PC"
-    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
+    ddff <- df[,c("status",what)] %>% na.omit()
+    roc_obj <- pROC::roc(ddff$status, ddff[, what], algorithm = 1, quiet = TRUE)
     
     # Calculate AUC and CI
     ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
@@ -205,7 +216,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out1 <- data.frame(marker_name=marker_name,
+    out1 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Unadjusted",
                        model = "Partly conditional",
@@ -230,7 +241,10 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     
     # --- 2. ROC Calculation (pROC) ---
     what <- "Risk_TDcox"
-    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
+    ddff <- df[,c("status",what)] %>% na.omit()
+    roc_obj <- pROC::roc(ddff$status, ddff[, what], algorithm = 1, quiet = TRUE)
+
+    
     
     # Calculate AUC and CI
     ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
@@ -273,7 +287,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out2 <- data.frame(marker_name=marker_name,
+    out2 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Unadjusted",
                        model = "Time dependent Cox PH",
@@ -298,8 +312,9 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     
     # --- 2. ROC Calculation (pROC) ---
     what <- "Risk_cox_simple"
-    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
-    
+    ddff <- df[,c("status",what)] %>% na.omit()
+    roc_obj <- pROC::roc(ddff$status, ddff[, what], algorithm = 1, quiet = TRUE)
+
     # Calculate AUC and CI
     ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
     ci_delong_nobon <- ci(roc_obj, method = "delong",conf.level=0.95)
@@ -341,7 +356,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out3 <- data.frame(marker_name=marker_name,
+    out3 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Unadjusted",
                        model = "Simple Cox PH",
@@ -368,7 +383,8 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       Predictors = predictores,
       log_marker = TRUE,
       pred_from = 150,
-      pred_to = 240
+      pred_to = 240,
+      change = ch
     )
     pc_model_predictors<-fit$pc_model_predictors
     tdcox_model_predictors <- fit$tdcox_model_predictors
@@ -379,8 +395,9 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     
     # --- 2. ROC Calculation (pROC) ---
     what = "Risk_PC"
-    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
-    
+    ddff <- df[,c("status",what)] %>% na.omit()
+    roc_obj <- pROC::roc(ddff$status, ddff[, what], algorithm = 1, quiet = TRUE)
+
     # Calculate AUC and CI
     ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
     ci_delong_nobon <- ci(roc_obj, method = "delong",conf.level=0.95)
@@ -422,7 +439,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out4 <- data.frame(marker_name=marker_name,
+    out4 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Partly conditional",
@@ -445,8 +462,10 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     ###################
     # --- 2. ROC Calculation (pROC) ---
     what = "Risk_TDcox"
-    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
-    
+    ddff <- df[,c("status",what)] %>% na.omit()
+    roc_obj <- pROC::roc(ddff$status, ddff[, what], algorithm = 1, quiet = TRUE)
+
+        
     # Calculate AUC and CI
     ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
     ci_delong_nobon <- ci(roc_obj, method = "delong",conf.level=0.95)
@@ -489,7 +508,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out5 <- data.frame(marker_name=marker_name,
+    out5 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Time dependent Cox PH",
@@ -512,8 +531,9 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
     ########################
     # --- 2. ROC Calculation (pROC) ---
     what = "Risk_cox_simple"
-    roc_obj <- roc(df$status, df[, what], algorithm = 1, quiet = TRUE)
-    
+    ddff <- df[,c("status",what)] %>% na.omit()
+    roc_obj <- pROC::roc(ddff$status, ddff[, what], algorithm = 1, quiet = TRUE)
+
     # Calculate AUC and CI
     ci_delong <- ci(roc_obj, method = "delong",conf.level=bc)
     ci_delong_nobon <- ci(roc_obj, method = "delong",conf.level=0.95)
@@ -556,7 +576,7 @@ RESULTS_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
       threshold_value <- round(optimal_coords$threshold, 3)
     }
     
-    out6 <- data.frame(marker_name=marker_name,
+    out6 <- data.frame(marker_name=marker_name_lab,
                        data_name=data_name,
                        type = "Adjusted",
                        model = "Simple Cox PH",
