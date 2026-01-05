@@ -79,7 +79,7 @@ plot_calibration_ggplot <- function(df,what = "Risk_PC") {
   ### Calibration
   ################
   df <- df %>%
-    mutate(Groups = cut(dup,quantile(df$dup,prob = seq(0,1,0.1),na.rm=TRUE),include.lowest=TRUE)) %>% 
+    mutate(Groups = cut(dup,unique(quantile(df$dup,prob = seq(0,1,0.1),na.rm=TRUE)),include.lowest=TRUE)) %>% 
     mutate(observed = if_else(time_to_event>predict_to | time_to_event<predict_from,0,status))
   
   tmpDat <- df %>%
