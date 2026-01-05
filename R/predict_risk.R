@@ -107,6 +107,16 @@ predict_risk <- function(datos = NULL,
   if (is.null(datos)) {
     pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",data_name,".csv",sep="")
     dat <- read.csv(pa)
+    
+    wher <- Predictors %in%names(dat)
+    
+    if (!all(wher)) {
+      pa <- paste("M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/baseline_data.csv",sep="")
+      datdat <- read.csv(pa)
+      datdat <- datdat[c("SubjectID",Predictors[!wher])]
+      dat <- dat %>% left_join(datdat)
+    }
+    
   } else {dat <- datos}
 
   if (!("set" %in% names(dat))) {
