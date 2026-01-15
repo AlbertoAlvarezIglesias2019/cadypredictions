@@ -65,10 +65,10 @@
 #' # Run the analysis for two specific data sets, one marker, and custom predictors
 #' custom_predictors <- c("Age", "treatment_reg")
 #' RESLIST(
-#'   dir_in = "C:/my_data/",
-#'   dir_out = "C:/my_results/",
+#'   dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/data/",
+#'   dir_out = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Report/results/",
 #'   dat_nam = c("cady_data_mp_50", "cady_data_mp_53"),
-#'   mar_nam = "NT_pro_BNP",
+#'   mar_nam = c("NT_pro_BNP","BNP),
 #'   predictores = custom_predictors
 #' )
 #' # The results will be saved in "C:/my_results/RESULTS.csv"
