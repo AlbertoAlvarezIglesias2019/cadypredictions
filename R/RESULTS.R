@@ -40,6 +40,8 @@
 #'   \item \code{LB}, \code{UB}: The lower and upper bounds of the 95% Confidence Interval for the HR.
 #'   \item \code{PVAL}: The p-value for the biomarker's coefficient.
 #'   \item \code{PRED}: A string listing the final set of predictors used in the model (this will dynamically change if the model fitting required dropping predictors due to convergence warnings).
+#'   \item \code{N}, \code{E}, \code{EinW}: Metadata for Total Sample, Total Events, 
+#'     and Events in the Prediction Window, respectively.
 #' }
 #'
 #' @details
@@ -181,7 +183,10 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                        LB = lb,
                        UB = ub,
                        PVAL = pval,
-                       PRED = pred)
+                       PRED = pred,
+                       N = fit$event_counts %>% filter(Model == "pccox",Set=="Training",Counts=="Total sample") %>% pull(Value),
+                       E = fit$event_counts %>% filter(Model == "pccox",Set=="Training",Counts=="Total events") %>% pull(Value),
+                       EinW = fit$event_counts %>% filter(Model == "pccox",Set=="Training",Counts=="Total events in window") %>% pull(Value))
     
     ###################
     ### Unadjusted TD
@@ -207,7 +212,10 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                        LB = lb,
                        UB = ub,
                        PVAL = pval,
-                       PRED = pred)
+                       PRED = pred,
+                       N = fit$event_counts %>% filter(Model == "tdcox",Set=="Training",Counts=="Total sample") %>% pull(Value),
+                       E = fit$event_counts %>% filter(Model == "tdcox",Set=="Training",Counts=="Total events") %>% pull(Value),
+                       EinW = fit$event_counts %>% filter(Model == "tdcox",Set=="Training",Counts=="Total events in window") %>% pull(Value))
     
     
     ##########################
@@ -234,7 +242,10 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                        LB = lb,
                        UB = ub,
                        PVAL = pval,
-                       PRED = pred)
+                       PRED = pred,
+                       N = fit$event_counts %>% filter(Model == "cox_simple",Set=="Training",Counts=="Total sample") %>% pull(Value),
+                       E = fit$event_counts %>% filter(Model == "cox_simple",Set=="Training",Counts=="Total events") %>% pull(Value),
+                       EinW = fit$event_counts %>% filter(Model == "cox_simple",Set=="Training",Counts=="Total events in window") %>% pull(Value))
     
     
     ################
@@ -271,7 +282,10 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                        LB = lb,
                        UB = ub,
                        PVAL = pval,
-                       PRED = pred)
+                       PRED = pred,
+                       N = fit$event_counts %>% filter(Model == "pccox",Set=="Training",Counts=="Total sample") %>% pull(Value),
+                       E = fit$event_counts %>% filter(Model == "pccox",Set=="Training",Counts=="Total events") %>% pull(Value),
+                       EinW = fit$event_counts %>% filter(Model == "pccox",Set=="Training",Counts=="Total events in window") %>% pull(Value))
     
     
     
@@ -301,7 +315,10 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                        LB = lb,
                        UB = ub,
                        PVAL = pval,
-                       PRED = pred)
+                       PRED = pred,
+                       N = fit$event_counts %>% filter(Model == "tdcox",Set=="Training",Counts=="Total sample") %>% pull(Value),
+                       E = fit$event_counts %>% filter(Model == "tdcox",Set=="Training",Counts=="Total events") %>% pull(Value),
+                       EinW = fit$event_counts %>% filter(Model == "tdcox",Set=="Training",Counts=="Total events in window") %>% pull(Value))
     
     
     #########################
@@ -328,7 +345,10 @@ RESULTS <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                        LB = lb,
                        UB = ub,
                        PVAL = pval,
-                       PRED = pred)
+                       PRED = pred,
+                       N = fit$event_counts %>% filter(Model == "cox_simple",Set=="Training",Counts=="Total sample") %>% pull(Value),
+                       E = fit$event_counts %>% filter(Model == "cox_simple",Set=="Training",Counts=="Total events") %>% pull(Value),
+                       EinW = fit$event_counts %>% filter(Model == "cox_simple",Set=="Training",Counts=="Total events in window") %>% pull(Value))
     
     out <- rbind(out1,out2,out3,out4,out5,out6)
     out
