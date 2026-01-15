@@ -36,6 +36,8 @@
 #'         for the Partly Conditional Cox, Time-Dependent Covariate Cox, and Simple Baseline Cox models, respectively.
 #'   \item \code{pc_model_predictors}, \code{tdcox_model_predictors}, \code{simplecox_model_predictors}:
 #'         The final character vectors of predictors used in each model after automatic reduction, if any.
+#'   \item \code{event_counts}: A summary data frame (from \code{count_events}) 
+#'     showing sample sizes and event totals for training/test sets across all three models.
 #' }
 #'
 #' @details
@@ -206,6 +208,7 @@ predict_risk <- function(datos = NULL,
   #  predictors =c("log_time_to_sample", marker_name_temp,Predictors),
   #  data = DD)
   
+  
   ### CHECK if it gets a warning and reduce the number of predictors
   reploop <- TRUE
   temppred <- Predictors
@@ -237,7 +240,21 @@ predict_risk <- function(datos = NULL,
       reploop<-FALSE}
   }
 
+  DDforeventcount <- masterD %>% 
+    filter(time_to_sample>=0) %>% mutate(log_time_to_sample = log2(time_to_sample+1)) %>% 
+    filter(time_to_event>=time_to_sample)
+  event_counts_pccox <- count_events(DDforeventcount[,c("set",
+                                                        "SubjectID",
+                                                        "time_to_event",
+                                                        "status",
+                                                        "log_time_to_sample",
+                                                        marker_name_temp,temppred)] %>% na.omit(),
+                                     pred_from,
+                                     pred_to)
+  
 
+  
+  
   fit_pccox <- pccox$model.fit
   #fit_pccox_pred <- temppred 
   if (length(temppred)==0) {fit_pccox_pred <- NULL} else {fit_pccox_pred <- temppred}
@@ -469,6 +486,12 @@ predict_risk <- function(datos = NULL,
   #fit_tdcox_pred <- temppred 
   if (length(temppred)==0) {fit_tdcox_pred <- NULL} else {fit_tdcox_pred <- temppred}
   
+  DDforeventcount <- masterD[,c("set","SubjectID","tstart","tstop","death",marker_name_temp,temppred)]
+  DDforeventcount <- DDforeventcount %>% rename(status = death,time_to_event=tstart)
+  event_counts_tdcox <- count_events(DDforeventcount %>% na.omit(),
+                                     pred_from,
+                                     pred_to)
+  
   
   
   ###################################################
@@ -580,7 +603,10 @@ predict_risk <- function(datos = NULL,
   
   if (length(temppred)==0) {fit_cox_simple_pred <- NULL} else {fit_cox_simple_pred <- temppred}
   
-  
+  DDforeventcount <- MASD[,c("set","SubjectID","time_to_event","status",marker_name_temp_bl,temppred)]
+  event_counts_cox_simple <- count_events(DDforeventcount %>% na.omit(),
+                                     pred_from,
+                                     pred_to)
   
   ###################################################
   ### Make the predictions from pred_from to pred_to
@@ -614,9 +640,15 @@ predict_risk <- function(datos = NULL,
   out <- out %>% select(marker_name:status,predict_from = time_to_sample,predict_to,all_of(marker_name_temp),Risk_PC,Risk_TDcox,Risk_cox_simple)
   
   
+  event_counts_pccox <- event_counts_pccox %>% mutate(Model = "pccox")
+  event_counts_tdcox <- event_counts_tdcox %>% mutate(Model = "tdcox")
+  event_counts_cox_simple <- event_counts_cox_simple %>% mutate(Model = "cox_simple")
+  event_counts <- rbind(event_counts_pccox,event_counts_tdcox,event_counts_cox_simple)
+
   list(pred_data = out,
        pc_model = fit_pccox,pc_model_predictors = fit_pccox_pred,
        tdcox_model = fit_tdcox,tdcox_model_predictors = fit_tdcox_pred,
-       simplecox_model = fit_cox_simple,simplecox_model_predictors = fit_cox_simple_pred)
+       simplecox_model = fit_cox_simple,simplecox_model_predictors = fit_cox_simple_pred,
+       event_counts = event_counts)
 }
 
