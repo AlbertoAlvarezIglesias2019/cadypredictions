@@ -57,9 +57,6 @@
 #' @import tidyverse
 #' @import partlyconditional
 #' @import survival
-#' @importFrom base paste read.csv data.frame round format
-#' @importFrom dplyr select left_join
-#' @importFrom stats confint
 #'
 #' @seealso
 #' The core modeling is performed by \code{\link[cadypredictions]{predict_risk}}. See also \code{\link[cadypredictions]{RESULTS}}.
