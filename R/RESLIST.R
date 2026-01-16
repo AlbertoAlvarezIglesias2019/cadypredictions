@@ -112,7 +112,7 @@ RESLIST <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
       if (ch) marker_name_lab <- paste(marker_name," (Change)",sep="")
       
       data_name <- dn
-      cat("\n\n\n Row = ",kkk,"; Data and Biomarker: ",data_name," and ",marker_name_lab,"\n\n")  
+      cat("\n\n\n Row = ",bio,"; Data and Biomarker: ",data_name," and ",marker_name_lab,"\n\n")  
       
       
       pa <- paste(dir_in,data_name,".csv",sep="")
