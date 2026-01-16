@@ -74,7 +74,6 @@
 #' @importFrom dplyr filter mutate group_by arrange slice_tail slice ungroup select distinct left_join full_join if_else
 #' @importFrom stringr str_detect
 #' @importFrom partlyconditional PC.Cox
-#' @importFrom survival coxph Surv survfit tmerge tdc
 #'
 #' @examples
 #' \dontrun{
