@@ -17,6 +17,9 @@
 #'   Must be present in \code{baseline_data.csv}.
 #' @param saveopt Character string (optional). File name prefix for saving results.
 #' @param ch Logical. If \code{TRUE}, models the "Change from Baseline" (\code{marker - marker_bl}).
+#' @param allcomb Logical. If \code{TRUE}, evaluates the full power set (all possible 
+#'   combinations) of \code{mar_nam}. If \code{FALSE} (default), evaluates 
+#'   biomarkers individually.
 #'
 #' @return A data frame (\code{OUT}) containing summarized results for every combination 
 #'   of data, biomarker subset, adjustment type, and model.
@@ -82,21 +85,23 @@ RESLIST <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Report/Re
                     mar_nam = c("BNP","NT_pro_BNP","CRP","hsTnI_STAT","Galectin_3"),
                     predictores = c("Age","lvef_mp_bas","diabetes_mellitus_YN","hypertension_YN","dyslipidemia_YN","treatment_reg"),
                     saveopt = NULL,
-                    ch = FALSE){
+                    ch = FALSE,
+                    allcomb = FALSE){
   
   library(cadypredictions)
   library(tidyverse)
   library(partlyconditional)
   library(survival)
   
-  # Loop from length 1 to length 4
-  all_combs <- lapply(1:length(mar_nam), function(x) combn(mar_nam, x, simplify = FALSE))
-  
-  # Flatten the list
-  all_combs <- unlist(all_combs, recursive = FALSE)
-  
-  #pointer <- expand.grid(data_name = dat_nam,
-  #                       marker_name = mar_nam)
+
+  if (allcomb) {
+    # Loop from length 1 to length 4
+    all_combs <- lapply(1:length(mar_nam), function(x) combn(mar_nam, x, simplify = FALSE))
+    # Flatten the list
+    all_combs <- unlist(all_combs, recursive = FALSE)
+  } else {
+    all_combs <- as.list(mar_nam)
+  }
   
 
   
