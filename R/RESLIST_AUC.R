@@ -16,7 +16,10 @@
 #' @param saveopt Character (optional). Prefix for saved result files.
 #' @param ch Logical. If \code{TRUE}, models "Change from Baseline" (\code{marker - marker_bl}).
 #' @param bc Numeric (optional). Confidence level for AUC. If \code{NULL}, uses 
-#'   Bonferroni correction: $1 - 0.05 / (\text{total combinations} \times 6)$.
+#'   Bonferroni correction: $1 - 0.05 / (\text{total combinations} \times 4)$.
+#' @param allcomb Logical. If \code{TRUE}, evaluates the full power set (all possible 
+#'   combinations) of \code{mar_nam}. If \code{FALSE} (default), evaluates 
+#'   biomarkers individually.
 #'
 #' @return A data frame (\code{OUT}) containing:
 #' \itemize{
@@ -85,7 +88,8 @@ RESLIST_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
                         predictores = c("Age","lvef_mp_bas","diabetes_mellitus_YN","hypertension_YN","dyslipidemia_YN","treatment_reg"),
                         saveopt = NULL,
                         ch = FALSE,
-                        bc = NULL){
+                        bc = NULL,
+                        allcomb = FALSE){
   
   
   library(cadypredictions)
@@ -95,10 +99,17 @@ RESLIST_AUC <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_Repor
   library(pROC)
   library(binom)
   
-  # Loop from length 1 to length 4
-  all_combs <- lapply(1:length(mar_nam), function(x) combn(mar_nam, x, simplify = FALSE))
-  # Flatten the list
-  all_combs <- unlist(all_combs, recursive = FALSE)
+  if (allcomb) {
+    # Loop from length 1 to length 4
+    all_combs <- lapply(1:length(mar_nam), function(x) combn(mar_nam, x, simplify = FALSE))
+    # Flatten the list
+    all_combs <- unlist(all_combs, recursive = FALSE)
+  } else {
+    all_combs <- as.list(mar_nam)
+  }
+
+  
+  
   numdim <- length(all_combs) * length(dat_nam)
   if (is.null(bc)) bc <- 1-0.05/(numdim*4)
   
