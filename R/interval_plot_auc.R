@@ -87,7 +87,7 @@ interval_plot_auc <- function(dat,marker_nam,boncorrect = TRUE) {
                                          data_name == "cady_data_ct_mace"~"Any CT or MACE (heart failure)",
                                          data_name == "cady_data_ct"~"Any CT",
                                          data_name == "cady_data_mace"~"MACE (heart failure)",
-                                         data_name == "cady_data_death"~"Detah from any cause"))
+                                         data_name == "cady_data_deaths"~"Death from any cause"))
   
 
   dat <- dat %>% mutate(lab = paste(lab2,"; ",type," (",model,")",sep=""))
