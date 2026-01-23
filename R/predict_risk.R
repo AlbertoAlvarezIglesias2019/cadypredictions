@@ -559,7 +559,7 @@ predict_risk <- function(datos = NULL,
   
   #masterD <- DD
   vars <- c("SubjectID",Predictors,marker_name_temp_bl,"time_to_event","status","set")
-  ddd <- MASD %>% filter(set=="training") %>% select(all_of(vars))
+  ddd <- MASD %>% filter(set=="training") %>% select(all_of(vars)) %>% distinct()
   
   
   #### OLD
