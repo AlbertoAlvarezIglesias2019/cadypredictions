@@ -327,7 +327,7 @@ predict_risk <- function(datos = NULL,
   nd1 <- nd[,c("SubjectID","log_time_to_sample","time_to_sample","time_to_event","status",marker_name_temp,fit_pccox_pred)]
   nd1 <- nd1 %>% na.omit()
   
-  oouu <- predict(pccox, newdata = nd1, prediction.time = pred_to)
+  oouu <- predict.PC_cox(pccox, newdata = nd1, prediction.time = pred_to)
   wher <- str_detect(names(oouu),"risk_")
   names(oouu)[wher] <- "Risk_PC"
   
