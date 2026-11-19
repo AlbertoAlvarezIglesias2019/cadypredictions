@@ -174,8 +174,8 @@ RESULTS_primary <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_R
     wher <- row.names(confint(fit$pc_model)) %in% "marker1"
     lb <- exp(as.numeric(confint(fit$pc_model,level = conf)[wher,][1]))
     ub <- exp(as.numeric(confint(fit$pc_model,level = conf)[wher,][2]))
-    lb95 <- exp(as.numeric(confint(fit$pc_model)[wher,][1]))
-    ub95 <- exp(as.numeric(confint(fit$pc_model)[wher,][2]))
+    lb95 <- exp(as.numeric(confint(fit$pc_model,level = 0.95)[wher,][1]))
+    ub95 <- exp(as.numeric(confint(fit$pc_model,level = 0.95)[wher,][2]))
     hr <- round(hr,2)
     lb95 <- round(lb95,2)
     ub95 <- round(ub95,2)
@@ -213,8 +213,8 @@ RESULTS_primary <- function(dir_in = "M:/CRF/ICORG/Studies/CADY/Clinical_Study_R
     wher <- row.names(confint(fit$tdcox_model)) %in% "marker1"
     lb <- exp(as.numeric(confint(fit$tdcox_model,level = conf)[wher,][1]))
     ub <- exp(as.numeric(confint(fit$tdcox_model,level = conf)[wher,][2]))
-    lb95 <- exp(as.numeric(confint(fit$pc_model)[wher,][1]))
-    ub95 <- exp(as.numeric(confint(fit$pc_model)[wher,][2]))
+    lb95 <- exp(as.numeric(confint(fit$tdcox_model,level = 0.95)[wher,][1]))
+    ub95 <- exp(as.numeric(confint(fit$tdcox_model,level = 0.95)[wher,][2]))
     hr <- round(hr,2)
     lb95 <- round(lb95,2)
     ub95 <- round(ub95,2)
